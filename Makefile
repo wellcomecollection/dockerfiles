@@ -1,6 +1,6 @@
 build_tooling-build:
 	docker build \
-    	--file ./image_builder/Dockerfile \
+    	--file ./build_tooling/Dockerfile \
     	--tag build_tooling:latest \
     	./build_tooling
 
