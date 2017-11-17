@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     print('*** Image will be tagged %s' % tag, flush=True)
 
-    print('*** Building the new image', flush=True)
+    print('*** Building the new image for %s' % dockerfile, flush=True)
 
     cmd = ['docker', 'build', '--file', dockerfile, '--tag', release_name]
 
