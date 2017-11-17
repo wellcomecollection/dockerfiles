@@ -1,12 +1,8 @@
-ROOT = $(shell git rev-parse --show-toplevel)
+image_builder-build:
+	docker build \
+    	--file ./image_builder/Dockerfile \
+    	--tag image_builder:latest \
+    	./image_builder
 
-include $(ROOT)/Makefile
-
-$(ROOT)/.docker/image_builder:
-    $(ROOT)/builds/build_ci_docker_image.py \
-        --project=image_builder \
-        --dir=builds \
-        --file=builds/image_builder.Dockerfile
-
-flake8-build: $(ROOT)/.docker/image_builder
+flake8-build: image_builder-build
 	./docker_run.py --dind -- image_builder --project=flake8
