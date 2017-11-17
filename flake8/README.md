@@ -1,6 +1,8 @@
-#wellcome/flake8
+# wellcome/flake8
 
-##Usage
+Wraps flake8 for linting python projects.
+
+## Usage
 
 ```
 docker run wellcome/flake8:latest --volume=my_code:/src
