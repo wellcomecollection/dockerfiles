@@ -1,10 +1,7 @@
-FROM alpine
+FROM wellcome/build_tooling
 
 LABEL maintainer "Alex Chan <a.chan@wellcome.ac.uk>"
 LABEL description "A Docker image for building Docker images for the Wellcome Digital Platform"
-
-RUN apk update
-RUN apk add docker git python3
 
 RUN pip3 install docopt boto3
 
