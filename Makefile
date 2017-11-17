@@ -6,3 +6,6 @@ image_builder-build:
 
 flake8-build: image_builder-build
 	./docker_run.py --dind -- image_builder --project=flake8
+
+tox-build: image_builder-build
+	./docker_run.py --dind -- image_builder --project=tox
