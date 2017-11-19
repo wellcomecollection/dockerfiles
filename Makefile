@@ -22,7 +22,12 @@ terraform_wrapper-build: image_builder-build
 jslint-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=jslint
 
+elasticdump-build: image_builder-build
+	./docker_run.py --dind -- wellcome/image_builder:latest --project=elasticdump
+
 publish_lambda-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_lambda
 
-build_all: flake8-build tox-build terraform_wrapper-build jslint-build publish_lambda-build
+build_all: \
+		flake8-build tox-build terraform_wrapper-build \
+		jslint-build publish_lambda-build elasticdump-build
