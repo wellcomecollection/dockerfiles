@@ -37,4 +37,4 @@ turtlelint-build: turtlelint/requirements.txt
 build_all: \
 		flake8-build tox-build terraform_wrapper-build \
 		jslint-build publish_lambda-build elasticdump-build \
-		turtlelint-built
+		turtlelint-build
