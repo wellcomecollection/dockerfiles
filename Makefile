@@ -28,6 +28,10 @@ elasticdump-build: image_builder-build
 publish_lambda-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_lambda
 
+scalafmt-build: image_builder-build
+	./docker_run.py --dind -- wellcome/image_builder:latest --project=scalafmt
+
 build_all: \
 		flake8-build tox-build terraform_wrapper-build \
-		jslint-build publish_lambda-build elasticdump-build
+		jslint-build publish_lambda-build elasticdump-build \
+		scalafmt
