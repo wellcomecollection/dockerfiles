@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 """
 Downloads our terraform.tfvars file from the platform-infra S3 bucket,
