@@ -5,7 +5,7 @@ set -o nounset
 set -o verbose
 
 # Run the generate_tfvars hook script to prepare tfvars
-if [ -f generate_tfvars.sh ];
+if [ -f generate_tfvars.sh ]
 then
     ./generate_tfvars.sh
 fi
