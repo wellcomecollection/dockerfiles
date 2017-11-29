@@ -1,2 +1,4 @@
 .idea
 .releases
+.DS_Store
+*.tfvars
