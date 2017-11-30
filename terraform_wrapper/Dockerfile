@@ -1,11 +1,9 @@
 FROM hashicorp/terraform:0.11.0
 
 RUN apk update && apk add git jq python3
-RUN pip3 install awscli
+RUN pip3 install awscli boto3
 
-COPY plan.sh /app/plan.sh
-COPY run.sh /app/run.sh
-COPY notify.sh /app/notify.sh
+COPY . /app
 
 VOLUME ["/data"]
 WORKDIR /data
