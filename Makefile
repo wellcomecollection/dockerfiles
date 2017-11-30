@@ -28,6 +28,8 @@ elasticdump-build: image_builder-build
 publish_lambda-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_lambda
 
+nginx-build: image_builder-build
+	./docker_run.py --dind -- wellcome/image_builder:latest --project=nginx
 
 scalafmt-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=scalafmt
