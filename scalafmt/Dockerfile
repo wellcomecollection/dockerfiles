@@ -18,4 +18,4 @@ RUN coursier bootstrap com.geirsson:scalafmt-cli_2.12:1.2.0 \
 VOLUME /repo
 WORKDIR /repo
 
-ENTRYPOINT ["sbt", "scalafmt"]
+ENTRYPOINT ["sbt", ";scalafmt;test:scalafmt"]
