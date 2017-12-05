@@ -1,4 +1,4 @@
-FROM pvansia/scala-sbt:0.13.13
+FROM java:8-jre-alpine
 
 LABEL maintainer "Alex Chan <a.chan@wellcome.ac.uk>"
 LABEL description "A Docker image for running Scalafmt"
@@ -18,4 +18,4 @@ RUN coursier bootstrap com.geirsson:scalafmt-cli_2.12:1.2.0 \
 VOLUME /repo
 WORKDIR /repo
 
-ENTRYPOINT ["sbt", "scalafmt"]
+ENTRYPOINT ["scalafmt"]
