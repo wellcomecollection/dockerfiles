@@ -31,6 +31,9 @@ publish_lambda-build: image_builder-build
 nginx-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=nginx
 
+sbt_wrapper-build: image_builder-build
+	./docker_run.py --dind -- wellcome/image_builder:latest --project=sbt_wrapper
+
 scalafmt-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=scalafmt
 
