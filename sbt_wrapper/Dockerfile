@@ -4,7 +4,7 @@ LABEL maintainer "Wellcome <wellcomedigitalplatform@wellcome.ac.uk>"
 LABEL description "A Docker image used for building sbt projects in the Wellcome Digital Platform"
 
 RUN apk update && \
-    apk add docker git py-pip
+    apk add docker py-pip
 
 RUN pip install docker-compose
 
