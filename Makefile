@@ -28,11 +28,17 @@ elasticdump-build: image_builder-build
 publish_lambda-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_lambda
 
+publish_service-build: image_builder-build
+	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_service
+
 nginx-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=nginx
 
 finatra_service_base-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=finatra_service_base
+
+sbt_wrapper-build: image_builder-build
+	./docker_run.py --dind -- wellcome/image_builder:latest --project=sbt_wrapper
 
 scalafmt-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=scalafmt
