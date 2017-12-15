@@ -2,10 +2,17 @@
 
 set -o errexit
 set -o nounset
-set -o verbose
 
 TOPIC_ARN=$1
 MESSAGE_FILE=$2
+
+username=$(aws iam get-user | jq -r '.User.UserName')
+stack=$(hcltool terraform.tf | jq -r '.terraform.backend.s3.key')
+
+aws sns publish \
+  --topic-arn "$TOPIC_ARN" \
+  --subject "terraform-apply-notification" \
+  --message "{\"username\": \"$username\", \"stack\": \"$stack\"}"
 
 if [ -e $MESSAGE_FILE ]; then
     aws sns publish \
