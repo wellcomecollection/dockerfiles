@@ -18,7 +18,7 @@ terraform init
 terraform get
 terraform plan -out terraform.plan
 
-if [[ "${PRODUCTION_STACK:-true}" == "true" ]]
+if [[ "${IS_PRODUCTION_STACK:-true}" == "true" ]]
 then
   echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
   echo "@                                                         @"
