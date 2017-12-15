@@ -24,9 +24,9 @@ then
   echo "@                                                         @"
   echo "@ Please review this plan.                                @"
   echo "@                                                         @"
-  echo "@ Because this is stack may cause public-facing changes,  @"
-  echo "@ ask somebody else to double-check the plan before       @"
-  echo "@ you run the apply step.                                 @"
+  echo "@ Because changes in this stack may cause public-facing   @"
+  echo "@ changes, ask somebody else to double-check the plan     @"
+  echo "@ before you run the apply step.                          @"
   echo "@                                                         @"
   echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
 fi
