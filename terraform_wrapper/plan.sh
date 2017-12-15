@@ -18,7 +18,7 @@ terraform init
 terraform get
 terraform plan -out terraform.plan
 
-if [[ "IS_PUBLIC_FACING:-true}" == "true" ]]
+if [[ "${IS_PUBLIC_FACING:-true}" == "true" ]]
 then
   echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
   echo "@                                                         @"
