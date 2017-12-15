@@ -2,7 +2,6 @@
 
 set -o errexit
 set -o nounset
-set -o verbose
 
 if [[ "${GET_PLATFORM_TFVARS:-false}" == "true" ]]
 then
@@ -19,4 +18,15 @@ terraform init
 terraform get
 terraform plan -out terraform.plan
 
-echo "Please review the above plan. If you are happy then run 'make terraform-apply"
+if [[ "${IS_PUBLIC_FACING:-true}" == "true" ]]
+then
+  echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+  echo "@                                                                      @"
+  echo "@ Please review this plan.                                             @"
+  echo "@                                                                      @"
+  echo "@ Because changes in this stack may cause public-facing                @"
+  echo "@ changes, ask somebody else to double-check the plan                  @"
+  echo "@ before you run the apply step.                                       @"
+  echo "@                                                                      @"
+  echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+fi
