@@ -2,7 +2,6 @@
 
 set -o errexit
 set -o nounset
-set -o verbose
 
 if [[ "${GET_PLATFORM_TFVARS:-false}" == "true" ]]
 then
@@ -19,4 +18,15 @@ terraform init
 terraform get
 terraform plan -out terraform.plan
 
-echo "Please review the above plan. If you are happy then run 'make terraform-apply"
+if [[ "${PRODUCTION_STACK:-true}" == "true" ]]
+then
+  echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+  echo "@                                                         @"
+  echo "@ Please review this plan.                                @"
+  echo "@                                                         @"
+  echo "@ Because this is a change to a production stack, please  @"
+  echo "@ ask somebody else to double-check the change before     @"
+  echo "@ you run the apply step.                                 @"
+  echo "@                                                         @"
+  echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+fi
