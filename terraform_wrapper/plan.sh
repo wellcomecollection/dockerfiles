@@ -18,14 +18,14 @@ terraform init
 terraform get
 terraform plan -out terraform.plan
 
-if [[ "${IS_PRODUCTION_STACK:-true}" == "true" ]]
+if [[ "IS_PUBLIC_FACING:-true}" == "true" ]]
 then
   echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
   echo "@                                                         @"
   echo "@ Please review this plan.                                @"
   echo "@                                                         @"
-  echo "@ Because this is a change to a production stack, please  @"
-  echo "@ ask somebody else to double-check the change before     @"
+  echo "@ Because this is stack may cause public-facing changes,  @"
+  echo "@ ask somebody else to double-check the plan before       @"
   echo "@ you run the apply step.                                 @"
   echo "@                                                         @"
   echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
