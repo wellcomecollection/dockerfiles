@@ -11,10 +11,9 @@ stack=$(hcltool terraform.tf | jq -r '.terraform.backend.s3.key')
 
 key=terraform_plans/"$stack"_"$(date +"%Y%m%d_%H%M%S")"_$username.txt
 
-pushd $(mktemp -d)
-  terraform show -no-color terraform.plan > terraform_plan.txt
-  aws s3 cp terraform_plan.txt s3://platform-infra/$key
-popd
+tmpfile=$(mktemp -d)/terraform_plan.txt
+terraform show -no-color terraform.plan > $tmpfile
+aws s3 cp $tmpfile s3://platform-infra/$key
 
 aws sns publish \
   --topic-arn "$TOPIC_ARN" \
