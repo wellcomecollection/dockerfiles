@@ -9,7 +9,8 @@ MESSAGE_FILE=$2
 username=$(aws iam get-user | jq -r '.User.UserName')
 stack=$(hcltool terraform.tf | jq -r '.terraform.backend.s3.key')
 
-key=terraform_plans/"$stack"_"$(date +"%Y%m%d_%H%M%S")"_$username.txt
+stack_name=$(echo "$stack" | tr '/' ' ' | awk '{print $2}')
+key=terraform_plans/"$stack_name"_"$(date +"%Y%m%d_%H%M%S")"_$username.txt
 
 tmpfile=$(mktemp -d)/terraform_plan.txt
 terraform show -no-color terraform.plan > $tmpfile
