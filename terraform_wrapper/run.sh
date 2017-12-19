@@ -18,6 +18,7 @@ then
   if [ -e terraform.plan ]
   then
     echo "Running apply operation."
+    /app/preapply.sh
     terraform apply terraform.plan
 
     set +o errexit
