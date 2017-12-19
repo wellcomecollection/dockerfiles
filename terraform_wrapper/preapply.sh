@@ -3,9 +3,6 @@
 set -o errexit
 set -o nounset
 
-TOPIC_ARN=$1
-MESSAGE_FILE=$2
-
 username=$(aws iam get-user | jq -r '.User.UserName')
 stack=$(hcltool terraform.tf | jq -r '.terraform.backend.s3.key')
 
