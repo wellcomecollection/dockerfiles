@@ -1,10 +1,10 @@
-FROM wellcome/build_tooling
+FROM alpine
 
 LABEL maintainer "Alex Chan <a.chan@wellcome.ac.uk>"
 LABEL description "A Docker image for deploying our Docker images to AWS"
 
-RUN apk update
-RUN apk add docker git python3
+RUN apk update && \
+    apk add docker git python3
 
 RUN pip3 install awscli docopt boto3
 

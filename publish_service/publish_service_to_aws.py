@@ -20,12 +20,37 @@ from the .releases directory in the root of the repo.
 """
 
 import os
+import shlex
 import subprocess
 
 import boto3
 import docopt
 
-from tooling import ecr_login, ecr_repo_uri_from_name, ROOT
+
+ROOT = subprocess.check_output([
+    'git', 'rev-parse', '--show-toplevel']).decode('ascii').strip()
+
+
+def ecr_repo_uri_from_name(ecr_client, name):
+    """
+    Given the name of an ECR repo (e.g. uk.ac.wellcome/api), return the URI
+    for the repo.
+    """
+    resp = ecr_client.describe_repositories(repositoryNames=[name])
+    try:
+        return resp['repositories'][0]['repositoryUri']
+    except (KeyError, IndexError) as e:
+        raise RuntimeError('Unable to look up repo URI for %r: %s' % (name, e))
+
+
+def ecr_login():
+    """
+    Authenticates for pushing to ECR.
+    """
+    command = subprocess.check_output([
+        'aws', 'ecr', 'get-login', '--no-include-email'
+    ]).decode('ascii')
+    subprocess.check_call(shlex.split(command))
 
 
 if __name__ == '__main__':
