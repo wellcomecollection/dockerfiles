@@ -1,9 +1,0 @@
-app:
-  image: "${TEST_IMAGE}:latest"
-  environment:
-    - INSTALL_DEPENDENCIES=false
-    - FIND_MATCH_PATHS="/data"
-  volumes:
-    - "${DATA_DIR}:/data"
-    - "${CONFIG_FILE}:/conftest.py"
-

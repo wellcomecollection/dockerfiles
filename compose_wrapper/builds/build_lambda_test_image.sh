@@ -20,10 +20,16 @@ SRC="/repo/$2/src"
 LABEL=$(basename $2)
 
 # Name of the new Docker image
-DOCKER_IMAGE="wellcome/lambda_test_$LABEL"
+DOCKER_IMAGE="wellcome/test_lambda_$LABEL"
 
 # Marker which indicates the image has been created
-MARKER=/repo/.docker/lambda_test_$LABEL
+MARKER=/repo/.docker/test_lambda_$LABEL
+
+function create_marker {
+    mkdir -p /repo/.docker
+    touch $MARKER
+    echo "Created marker at: $MARKER"
+}
 
 # If we don't already have the image, pull it now.
 if ! docker inspect --type=image wellcome/test_lambda >/dev/null 2>&1
@@ -43,19 +49,17 @@ then
     echo "COPY requirements.txt /requirements.txt"      >> $DOCKERFILE
     echo "RUN pip3 install -r /requirements.txt"        >> $DOCKERFILE
     docker build --tag $DOCKER_IMAGE --file $DOCKERFILE $SRC
+
+    create_marker
   else
     echo "Marker present, nothing to do."
   fi
 else
   echo "Tagging image: $DOCKER_IMAGE"
   docker tag wellcome/test_lambda $DOCKER_IMAGE
+
+  create_marker
 fi
 
-mkdir -p /repo/.docker
-
-touch $MARKER
-
+# Create file with current image locally
 echo "$DOCKER_IMAGE" > /tmp/docker_image
-
-echo "Created marker at: $MARKER"
-

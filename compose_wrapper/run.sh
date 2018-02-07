@@ -1,4 +1,7 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
+
+set -o errexit
+set -o nounset
 
 echo "-- Building Test Image -------------"
 
@@ -21,7 +24,7 @@ then
         --env DATA_DIR=$1/$2/src \
         --env CONFIG_FILE=$1/lambda_conftest.py \
         --env TEST_IMAGE=`cat /tmp/docker_image` \
-        docker/compose:1.13.0 \
+        docker/compose:1.18.0 \
             -f /rootfs/$2/.docker-compose.yml \
             up --exit-code-from app
 
