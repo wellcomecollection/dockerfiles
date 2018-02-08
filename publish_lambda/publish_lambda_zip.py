@@ -62,11 +62,25 @@ def build_lambda_local(path, name):
 
     # Copy all the associated files to the Lambda directory.
     for f in os.listdir(path):
-        if not f.startswith(('test_', '.', 'requirements.txt', '__pycache__')):
-            shutil.copy(
-                src=os.path.join(path, f),
-                dst=os.path.join(target, os.path.basename(f))
-            )
+        if f.startswith((
+            # Required for tests, but unneeded in our prod images
+            'test_',
+            '__pycache__',
+            'docker-compose.yml',
+
+            # Hidden files
+            '.',
+
+            # Required for installation, not for our prod Lambdas
+            'requirements.in',
+            'requirements.txt',
+        )):
+            continue
+
+        shutil.copy(
+            src=os.path.join(path, f),
+            dst=os.path.join(target, os.path.basename(f))
+        )
 
     # Now install any additional pip dependencies.
     reqs_file = os.path.join(path, 'requirements.txt')
