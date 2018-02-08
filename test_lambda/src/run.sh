@@ -18,7 +18,11 @@ function install_dependencies {
 function run_tests {
   echo "Testing ..."
 
-  install_dependencies
+  if [[ ${INSTALL_DEPENDENCIES:-true} != "false" ]]
+  then
+    install_dependencies
+  fi
+
   FIND_MATCH_PATHS=${FIND_MATCH_PATHS:-/data}
   /app/test.sh "$FIND_MATCH_PATHS"
 

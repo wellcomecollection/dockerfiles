@@ -14,3 +14,5 @@ docker run wellcome/test_lambda \
     --env FIND_MATCH_PATHS="/data" \
     --tty
 ```
+
+You can skip installing dependencies by passing the environment variable `INSTALL_DEPENDENCIES=false`.
