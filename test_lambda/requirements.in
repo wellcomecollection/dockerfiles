@@ -1,0 +1,7 @@
+docker-compose
+pytest-docker
+requests
+
+# boto3 is pre-installed in the AWS Lambda environment, so preinstall it
+# in our test environment as well.
+boto3
