@@ -1,3 +1,5 @@
+ROOT = $(shell git rev-parse --show-toplevel)
+
 build_tooling-build:
 	docker build \
     	--file ./build_tooling/Dockerfile \
@@ -28,6 +30,12 @@ elasticdump-build: image_builder-build
 publish_lambda-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_lambda
 
+test_lambda-build: image_builder-build
+	docker build \
+    	--file ./test_lambda/Dockerfile \
+    	--tag wellcome/test_lambda:latest \
+    	./test_lambda
+
 publish_service-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_service
 
@@ -42,6 +50,25 @@ sbt_wrapper-build: image_builder-build
 
 scalafmt-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=scalafmt
+
+
+FREEZERAY = $(ROOT)/sqs_freezeray
+
+$(FREEZERAY)/requirements.txt: $(FREEZERAY)/requirements.in
+	docker run --rm --volume $(FREEZERAY):/src --rm micktwomey/pip-tools
+
+sqs_freezeray-build: image_builder-build $(FREEZERAY)/requirements.txt
+	./docker_run.py --dind -- wellcome/image_builder:latest --project=sqs_freezeray
+
+
+SQS_REDRIVE = $(ROOT)/sqs_redrive
+
+$(SQS_REDRIVE)/requirements.txt: $(SQS_REDRIVE)/requirements.in
+	docker run --rm --volume $(SQS_REDRIVE):/src --rm micktwomey/pip-tools
+
+sqs_redrive-build: image_builder-build $(SQS_REDRIVE)/requirements.txt
+	./docker_run.py --dind -- wellcome/image_builder:latest --project=sqs_redrive
+
 
 turtlelint/requirements.txt: turtlelint/requirements.in
 	docker run --rm --volume $$(pwd)/turtlelint:/src micktwomey/pip-tools
