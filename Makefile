@@ -87,21 +87,6 @@ sqs_redrive-build: image_builder-build $(SQS_REDRIVE)/requirements.txt docker_ru
 cache_cleaner-build: image_builder-build docker_run.py
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=cache_cleaner
 
-# loris
-
-LORIS = $(ROOT)/loris
-
-# TODO: Flip this to using micktwomey/pip-tools when that's updated
-# with a newer version of pip-tools.
-$(LORIS)/loris/requirements.txt: $(LORIS)/requirements.in
-	docker run --rm \
-		-v $(LORIS):/data \
-		wellcome/build_tooling:latest \
-		pip-compile
-
-loris-build: image_builder-build $(LORIS)/loris/requirements.txt docker_run.py
-	./docker_run.py --dind -- wellcome/image_builder:latest --project=loris
-
 # turtlelint
 
 turtlelint/requirements.txt: turtlelint/requirements.in
