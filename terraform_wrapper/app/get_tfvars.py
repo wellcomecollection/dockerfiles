@@ -10,10 +10,10 @@ import os
 import boto3
 
 
-BUCKET = 'platform-infra'
+BUCKET_NAME = os.environ['bucket_name']
+OBJECT_KEY = os.environ['object_key']
 
-TFVARS_FILE = 'terraform.tfvars'
-
+TFVARS_FILE = '/data/terraform.tfvars'
 
 def get_matching_s3_keys(bucket, prefix=''):
     """
@@ -53,15 +53,16 @@ def get_matching_s3_keys(bucket, prefix=''):
 if __name__ == '__main__':
     client = boto3.client('s3')
     client.download_file(
-        Bucket=BUCKET,
-        Key='terraform.tfvars',
+        Bucket=BUCKET_NAME,
+        Key=OBJECT_KEY,
         Filename=TFVARS_FILE
     )
 
     release_ids = {}
-    for key in get_matching_s3_keys(bucket=BUCKET, prefix='releases'):
+    for key in get_matching_s3_keys(bucket=BUCKET_NAME, prefix='releases'):
         release_id = client.get_object(
-            Bucket=BUCKET, Key=key
+            Bucket=BUCKET_NAME,
+            Key=key
         )['Body'].read()
         release_ids[os.path.basename(key)] = release_id.decode('ascii').strip()
 
