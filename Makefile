@@ -38,6 +38,9 @@ jslint-build: image_builder-build docker_run.py
 elasticdump-build: image_builder-build docker_run.py
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=elasticdump
 
+format_json-build: image_builder-build docker_run.py
+	./docker_run.py --dind -- wellcome/image_builder:latest --project=format_json
+
 publish_lambda-build: image_builder-build docker_run.py
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_lambda
 
