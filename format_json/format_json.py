@@ -10,7 +10,12 @@ def find_json_files():
     for root, _, filenames in os.walk('.'):
         if any(
             d in root
-            for d in ['/WIP', '/.terraform', '/target']
+            for d in [
+                '/WIP',
+                '/.terraform',
+                '/target',
+                '/node_modules'
+            ]
         ):
             continue
 
