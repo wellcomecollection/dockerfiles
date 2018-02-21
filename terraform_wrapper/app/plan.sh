@@ -3,15 +3,9 @@
 set -o errexit
 set -o nounset
 
-if [[ "${GET_PLATFORM_TFVARS:-false}" == "true" ]]
+if [[ "${GET_TFVARS:-false}" == "true" ]]
 then
-  /app/get_platform_tfvars.py
-fi
-
-# Run the generate_tfvars hook script to prepare tfvars
-if [ -f generate_tfvars.sh ]
-then
-    ./generate_tfvars.sh
+  /app/get_tfvars.py
 fi
 
 terraform init
