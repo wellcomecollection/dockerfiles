@@ -13,7 +13,7 @@ import boto3
 BUCKET_NAME = os.environ['BUCKET_NAME']
 OBJECT_KEY = os.environ['OBJECT_KEY']
 
-TFVARS_FILE = '/data/terraform.tfvars'
+TFVARS_FILE = 'terraform.tfvars'
 
 def get_matching_s3_keys(bucket, prefix=''):
     """
