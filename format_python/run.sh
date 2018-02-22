@@ -3,4 +3,9 @@
 set -o errexit
 set -o nounset
 
-find . -name '*.py'
+PATHS_TO_FORMAT=$(find . -name '*.py' \
+  -not -path '*/.lambda_zips/*' \
+  -not -path '*/.terraform/*' \
+  -not -path '*/target/*')
+
+echo $PATHS_TO_FORMAT
