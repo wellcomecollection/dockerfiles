@@ -8,4 +8,4 @@ PATHS_TO_FORMAT=$(find . -name '*.py' \
   -not -path '*/.terraform/*' \
   -not -path '*/target/*')
 
-echo $PATHS_TO_FORMAT | xargs autoflake --remove-all-unused-imports
+echo $PATHS_TO_FORMAT | xargs autoflake --remove-all-unused-imports --in-place
