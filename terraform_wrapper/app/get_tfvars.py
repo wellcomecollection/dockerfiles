@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 """
-Downloads our terraform.tfvars file from the platform-infra S3 bucket,
+Downloads our .tfvars file from the specified S3 bucket,
 and fills in the ``release_ids`` variable.
 """
 
