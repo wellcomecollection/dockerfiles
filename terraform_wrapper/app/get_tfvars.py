@@ -36,6 +36,10 @@ def get_matching_s3_keys(bucket, prefix=''):
         # The S3 API response is a large blob of metadata.
         # 'Contents' contains information about the listed objects.
         resp = s3.list_objects_v2(**kwargs)
+
+        if not 'Contents' in resp:
+            break
+
         for obj in resp['Contents']:
             key = obj['Key']
             if key.startswith(prefix) and not key.endswith("/"):
@@ -66,11 +70,12 @@ if __name__ == '__main__':
         )['Body'].read()
         release_ids[os.path.basename(key)] = release_id.decode('ascii').strip()
 
-    max_key_len = max(len(k) for k in release_ids)
+    if release_ids:
+        max_key_len = max(len(k) for k in release_ids)
 
-    with open(TFVARS_FILE, 'a') as outfile:
-        outfile.write('\n')
-        outfile.write('release_ids = {\n')
-        for key, release_id in release_ids.items():
-            outfile.write(f'  {key.ljust(max_key_len)} = "{release_id}"\n')
-        outfile.write('}\n')
+        with open(TFVARS_FILE, 'a') as outfile:
+            outfile.write('\n')
+            outfile.write('release_ids = {\n')
+            for key, release_id in release_ids.items():
+                outfile.write(f'  {key.ljust(max_key_len)} = "{release_id}"\n')
+            outfile.write('}\n')

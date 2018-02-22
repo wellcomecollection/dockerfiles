@@ -18,18 +18,8 @@ then
   if [ -e terraform.plan ]
   then
     echo "Running apply operation."
-    /app/preapply.sh
+    /app/notify.sh
     terraform apply terraform.plan
-
-    set +o errexit
-
-    echo "Extracting output to $OUTPUT_LOCATION"
-    terraform output --json > "$OUTPUT_LOCATION"
-
-    echo "Sending succesful apply notification."
-    /app/notify.sh $TOPIC_ARN "$OUTPUT_LOCATION"
-
-    set -o errexit
   else
     echo "terraform.plan not found. Have you run a plan?"
     exit 1
