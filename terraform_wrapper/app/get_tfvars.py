@@ -38,7 +38,7 @@ def get_matching_s3_keys(bucket, prefix=''):
         resp = s3.list_objects_v2(**kwargs)
         for obj in resp['Contents']:
             key = obj['Key']
-            if key.startswith(prefix):
+            if key.startswith(prefix) and not key.endswith("/"):
                 yield key
 
         # The S3 API is paginated, returning up to 1000 keys at a time.
