@@ -14,10 +14,6 @@ ROOT = subprocess.check_output([
 CURRENT_COMMIT = subprocess.check_output([
     'git', 'rev-parse', 'HEAD']).decode('ascii').strip()
 
-# Environment from environment environment variable!
-DEFAULT_BUILD_ENV = 'dev'
-PLATFORM_ENV = os.getenv('PLATFORM_ENV', DEFAULT_BUILD_ENV)
-
 
 def write_release_id(project, release_id):
     """
@@ -29,18 +25,6 @@ def write_release_id(project, release_id):
     release_file = os.path.join(releases_dir, project)
     with open(release_file, 'w') as f:
         f.write(release_id)
-
-
-def mkdir_p(path):
-    """Create a directory if it doesn't already exist."""
-    # https://stackoverflow.com/a/600612/1558022
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
 
 
 def compare_zip_files(zf1, zf2):
