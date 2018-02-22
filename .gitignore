@@ -2,5 +2,3 @@
 .releases
 .DS_Store
 *.tfvars
-
-docker_run.py
