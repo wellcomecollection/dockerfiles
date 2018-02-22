@@ -10,8 +10,8 @@ import os
 import boto3
 
 
-BUCKET_NAME = os.environ['bucket_name']
-OBJECT_KEY = os.environ['object_key']
+BUCKET_NAME = os.environ['BUCKET_NAME']
+OBJECT_KEY = os.environ['OBJECT_KEY']
 
 TFVARS_FILE = '/data/terraform.tfvars'
 
