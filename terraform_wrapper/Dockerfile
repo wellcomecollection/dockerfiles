@@ -8,7 +8,4 @@ COPY app /app
 VOLUME ["/data"]
 WORKDIR /data
 
-ENV BUCKET_NAME="wellcomecollection-platform-infra"
-ENV OBJECT_KEY="terraform.tfvars"
-
 ENTRYPOINT /app/run.sh

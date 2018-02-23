@@ -11,7 +11,7 @@ key=terraform_plans/"$stack_name"_"$(date +"%Y%m%d_%H%M%S")"_$username.txt
 
 tmpfile=$(mktemp -d)/terraform_plan.txt
 terraform show -no-color terraform.plan > $tmpfile
-aws s3 cp $tmpfile s3://$bucket_name/$key
+aws s3 cp $tmpfile s3://$BUCKET_NAME/$key
 
 git_branch=$(git rev-parse --abbrev-ref HEAD)
 git_commit=$(git rev-parse HEAD)
