@@ -123,5 +123,6 @@ if __name__ == '__main__':
             'git_branch': git('rev-parse', '--abbrev-ref', 'HEAD'),
             'iam_user': iam_user,
             'project': project,
+            'push_type': 'ecr_image',
         }
         sns_client.publish(TopicArn=topic_arn, Message=json.dumps(message))
