@@ -4,7 +4,7 @@
 Push a Docker image to ECR and upload a release ID to S3.
 
 Usage:
-  publish_service_to_aws.py --namespace=<id> --project=<name> --infra-bucket=<bucket>
+  publish_service_to_aws.py --namespace=<id> --project=<name> --infra-bucket=<bucket> [--sns-topic=<topic_arn>]
   publish_service_to_aws.py -h | --help
 
 Options:
@@ -13,6 +13,8 @@ Options:
   --project=<project>      Name of the project (e.g. api, loris).  Assumes
                            there's a Docker image of the same name.
   --infra-bucket=<bucket>  Name of the infra bucket for storing release IDs.
+  --sns-topic=<topic_arn>  If supplied, send a message about the push to this
+                           SNS topic.
 
 This script looks up the release ID (which it assumes is the Docker tag)
 from the .releases directory in the root of the repo.
@@ -27,8 +29,15 @@ import boto3
 import docopt
 
 
-ROOT = subprocess.check_output([
-    'git', 'rev-parse', '--show-toplevel']).decode('ascii').strip()
+def cmd(*args):
+    return subprocess.check_output(list(args)).decode('ascii').strip()
+
+
+def git(*args):
+    return cmd('git', *args)
+
+
+ROOT = git('rev-parse', '--show-toplevel')
 
 
 def ecr_repo_uri_from_name(ecr_client, name):
@@ -59,6 +68,8 @@ if __name__ == '__main__':
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(args['--infra-bucket'])
     ecr_client = boto3.client('ecr')
+
+    topic_arn = args['--sns-topic']
 
     project = args['--project']
     namespace = args['--namespace']
@@ -93,7 +104,24 @@ if __name__ == '__main__':
     finally:
         subprocess.check_call(['docker', 'rmi', renamed_image_tag])
 
-    # Finally upload the release ID string to S3.
+    # Upload the release ID string to S3.
     if release_file_exists:
         print('*** Uploading release ID to S3')
         bucket.upload_file(Filename=release_file, Key='releases/%s' % project)
+
+    if topic_arn is not None:
+        import json
+
+        sns_client = boto3.client('sns')
+
+        get_user_output = cmd('aws', 'iam', 'get-user')
+        iam_user = json.loads(get_user_output)['User']['UserName']
+
+        message = {
+            'commit_id': git('rev-parse', '--abbrev-ref', 'HEAD'),
+            'commit_msg': git('log', '-1', '--oneline', '--pretty=%B'),
+            'git_branch': git('rev-parse', '--abbrev-ref', 'HEAD'),
+            'iam_user': iam_user,
+            'project': project,
+        }
+        sns_client.publish(TopicArn=topic_arn, Message=json.dumps(message))
