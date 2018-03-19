@@ -150,6 +150,8 @@ if __name__ == '__main__':
     name = os.path.basename(key)
     filename = build_lambda_local(path=path, name=name)
 
+    upload_to_s3(client=client, filename=filename, bucket=bucket, key=key)
+
     if topic_arn is not None:
         import json
 
@@ -167,5 +169,3 @@ if __name__ == '__main__':
             'push_type': 'aws_lambda',
         }
         sns_client.publish(TopicArn=topic_arn, Message=json.dumps(message))
-
-    upload_to_s3(client=client, filename=filename, bucket=bucket, key=key)
