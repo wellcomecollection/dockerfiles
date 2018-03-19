@@ -29,8 +29,15 @@ import docopt
 from tooling import compare_zip_files
 
 
-ROOT = subprocess.check_output([
-    'git', 'rev-parse', '--show-toplevel']).decode('ascii').strip()
+def cmd(*args):
+    return subprocess.check_output(list(args)).decode('ascii').strip()
+
+
+def git(*args):
+    return cmd('git', *args)
+
+
+ROOT = git('rev-parse', '--show-toplevel')
 
 ZIP_DIR = os.path.join(ROOT, '.lambda_zips')
 
