@@ -2,3 +2,5 @@ boto3
 pytest
 pip-tools
 docopt
+coverage
+pytest-cov
