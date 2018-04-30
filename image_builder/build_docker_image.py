@@ -50,7 +50,12 @@ if __name__ == '__main__':
 
     print('*** Building the new image for %s' % dockerfile, flush=True)
 
-    cmd = ['docker', 'build', '--file', dockerfile, '--tag', release_name]
+    cmd = [
+        'docker', 'build',
+        '--build-arg', 'PROJECT=%s' % project,
+        '--file', dockerfile,
+        '--tag', release_name
+    ]
 
     if variant is not None:
         cmd.extend(['--build-arg', 'variant=%s' % variant])
