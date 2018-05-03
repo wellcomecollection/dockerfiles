@@ -24,6 +24,7 @@ from the .releases directory in the root of the repo.
 import os
 import shlex
 import subprocess
+import sys
 
 import boto3
 import docopt
@@ -56,10 +57,16 @@ def ecr_login():
     """
     Authenticates for pushing to ECR.
     """
-    command = subprocess.check_output([
-        'aws', 'ecr', 'get-login', '--no-include-email'
-    ]).decode('ascii')
-    subprocess.check_call(shlex.split(command))
+    # Normally subprocess.check_[call|output] prints an error that includes
+    # the command that failed.  This may include AWS credentials, so we
+    # want to suppress the output in an error!
+    try:
+        command = subprocess.check_output([
+            'aws', 'ecr', 'get-login', '--no-include-email'
+        ]).decode('ascii')
+        subprocess.check_call(shlex.split(command))
+    except subprocess.CalledProcessError as err:
+        sys.exit(err.returncode)
 
 
 if __name__ == '__main__':
