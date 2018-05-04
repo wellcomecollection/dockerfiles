@@ -31,7 +31,7 @@ import docopt
 
 
 def cmd(*args):
-    return subprocess.check_output(list(args)).decode('ascii').strip()
+    return subprocess.check_output(list(args)).decode('utf8').strip()
 
 
 def git(*args):
@@ -61,9 +61,7 @@ def ecr_login():
     # the command that failed.  This may include AWS credentials, so we
     # want to suppress the output in an error!
     try:
-        command = subprocess.check_output([
-            'aws', 'ecr', 'get-login', '--no-include-email'
-        ]).decode('ascii')
+        command = cmd('aws', 'ecr', 'get-login', '--no-include-email')
         subprocess.check_call(shlex.split(command))
     except subprocess.CalledProcessError as err:
         sys.exit(err.returncode)
