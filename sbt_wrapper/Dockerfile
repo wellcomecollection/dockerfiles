@@ -15,4 +15,6 @@ RUN curl -L "https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${
 VOLUME /repo
 WORKDIR /repo
 
-ENTRYPOINT ["/usr/local/sbt/bin/sbt"]
+# We were seeing occasional stack overflow errors since upgrading to scala 2.12
+# This is to increase the default thread stack size so that doesn't happen
+ENTRYPOINT ["/usr/local/sbt/bin/sbt", "-J-Xss2M"]
