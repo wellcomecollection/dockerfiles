@@ -15,6 +15,8 @@ RUN curl -L "https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${
 VOLUME /repo
 WORKDIR /repo
 
-# We were seeing occasional stack overflow errors since upgrading to scala 2.12
-# This is to increase the default thread stack size so that doesn't happen
-ENTRYPOINT ["/usr/local/sbt/bin/sbt", "-J-Xss2M"]
+# We're seeing scala builds hanging in Travis.
+# According to https://stackoverflow.com/questions/46475649/sbt-hangs-during-tests-on-travis-ci,
+# this might be due to sbt not having enough memory and swapping too much.
+# So increase memory and see what happens
+ENTRYPOINT ["/usr/local/sbt/bin/sbt", "-J-Xss6M", "-J-Xms2048M", "-J-Xmx2048M", "-J-XX:MaxPermSize=512M"]
