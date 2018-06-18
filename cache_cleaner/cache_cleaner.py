@@ -22,9 +22,14 @@ import os
 import re
 import time
 
+import daiquiri
 import docopt
 
 import simulfs
+
+
+daiquiri.setup(level=os.environ.get('LOG_LEVEL', 'INFO'))
+logger = daiquiri.getLogger(__name__)
 
 
 def parse_max_cache_size_arg(value):
@@ -55,11 +60,11 @@ def main():
     if force:
         os.environ['X-RUN-CACHE-CLEANER'] = 'True'
 
-    print(f'*** Walking filesystem for {cache_path}')
+    logger.info('Walking filesystem for %r', cache_path)
     fs = simulfs.SimulatedFS(cache_path)
 
     # Start by deleting files that are older than a certain age.
-    print(f'*** Deleting files that are more than {max_age} seconds old')
+    logger.info('Deleting files that are more than %d seconds old', max_age)
     for f in fs.files:
         if now - f.last_access_time > max_age:
             f.delete()
@@ -67,12 +72,13 @@ def main():
     # If the size of the system is still too large, continue deleting
     # files until we're under the limit.
     files_by_size = sorted(fs.files, key=lambda f: f.last_access_time)
-    print(f'*** Deleting files to bring the cache under {max_cache_size} Kbytes')
+    logger.info(
+        'Deleting files to bring the cache under %d Kbytes', max_cache_size)
     while fs.size > max_cache_size:
         next_to_delete = files_by_size.pop(0)
         next_to_delete.delete()
 
-    print(f'*** Cache clearing complete')
+    logger.info('Cache clearing complete')
 
 
 if __name__ == "__main__":
