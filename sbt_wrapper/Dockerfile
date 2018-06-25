@@ -6,7 +6,7 @@ LABEL description "A Docker image used for building sbt projects in the Wellcome
 RUN apk add --update bash curl docker py-pip
 RUN pip install docker-compose
 
-ENV SBT_VERSION 1.1.1
+ENV SBT_VERSION 1.1.6
 ENV SBT_HOME /usr/local/sbt
 ENV PATH ${PATH}:${SBT_HOME}/bin
 
@@ -19,4 +19,4 @@ WORKDIR /repo
 # According to https://stackoverflow.com/questions/46475649/sbt-hangs-during-tests-on-travis-ci,
 # this might be due to sbt not having enough memory and swapping too much.
 # So increase memory and see what happens
-ENTRYPOINT ["/usr/local/sbt/bin/sbt", "-J-Xss6M", "-J-Xms2048M", "-J-Xmx2048M", "-J-XX:MaxPermSize=512M"]
+ENTRYPOINT ["/usr/local/sbt/bin/sbt", "-J-Xss6M", "-J-Xms2G", "-J-Xmx3G"]

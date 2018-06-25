@@ -2,3 +2,4 @@
 .releases
 .DS_Store
 *.tfvars
+*.iml
