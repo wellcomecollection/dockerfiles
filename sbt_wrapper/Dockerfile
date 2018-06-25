@@ -6,7 +6,7 @@ LABEL description "A Docker image used for building sbt projects in the Wellcome
 RUN apk add --update bash curl docker py-pip
 RUN pip install docker-compose
 
-ENV SBT_VERSION 1.1.1
+ENV SBT_VERSION 1.1.6
 ENV SBT_HOME /usr/local/sbt
 ENV PATH ${PATH}:${SBT_HOME}/bin
 
