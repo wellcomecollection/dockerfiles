@@ -1,4 +1,4 @@
-FROM hashicorp/terraform:0.11.3
+FROM hashicorp/terraform:0.11.7
 
 RUN apk update && apk add git jq python3
 RUN pip3 install awscli boto3 pyhcl
