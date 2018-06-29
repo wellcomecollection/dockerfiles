@@ -21,6 +21,12 @@ import errno
 import os
 import sys
 
+import daiquiri
+
+
+daiquiri.setup(level=os.environ.get('LOG_LEVEL', 'INFO'))
+logger = daiquiri.getLogger(__name__)
+
 
 def stat_f(path):
     return os.stat(path)
@@ -68,9 +74,9 @@ class File:
         try:
             remove_f(self.path)
         except PermissionError as err:
-            print(f'Failed to delete {self.path}: {err}', file=sys.stderr)
+            logger.error(f'Failed to delete %r: %r', self.path, err)
         else:
-            print(f'Deleted file {self.path}')
+            logger.debug(f'Deleted file %r', self.path)
             self.parent.children.remove(self)
             if self.parent.is_empty:
                 self.parent.remove()
@@ -133,7 +139,7 @@ class Directory:
             else:
                 raise
         else:
-            print(f'Deleted empty directory {self.path}')
+            logger.debug('Deleted empty directory %r', self.path)
             self.parent.children.remove(self)
             if self.parent.is_empty:
                 self.parent.remove()
