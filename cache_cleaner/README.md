@@ -18,6 +18,10 @@ Our caches are bounded by two parameters:
 
 Both of these parameters are configurable.
 
+Cache cleaner can be made to execute repeatedly by setting ```CLEAN_INTERVAL```.
+
+*   **CLEAN_INTERVAL** -- the time to wait between cleanups, argument is as for sleep (e.g., 1s, 1m, 1h). To run once only do not set, or set to 0.
+
 ## Usage
 
 Build the Docker image containing the script:
@@ -30,4 +34,10 @@ To run the script, share the cache directory with the container and pass paramet
 
 ```console
 $ docker run -v /path/to/cache:/data -e MAX_AGE=30 -e MAX_SIZE=5000000 efs_cache_cleaner
+```
+
+or to repeat every 10 minutes
+
+```console
+$ docker run -v /path/to/cache:/data -e MAX_AGE=30 -e MAX_SIZE=5000000 -e CLEAN_INTERVAL=10m efs_cache_cleaner
 ```
