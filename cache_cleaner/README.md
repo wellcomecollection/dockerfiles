@@ -18,7 +18,7 @@ Our caches are bounded by two parameters:
 
 Both of these parameters are configurable.
 
-Cache cleaner can be made to execute repeatedly by setting ```CLEAN_INTERVAL```.
+Cache cleaner can optionally repeat executions at a timed interval if ```CLEAN_INTERVAL``` is set.
 
 *   **CLEAN_INTERVAL** -- the time to wait between cleanups, argument is as for sleep (e.g., 1s, 1m, 1h). To run once only do not set, or set to 0.
 
