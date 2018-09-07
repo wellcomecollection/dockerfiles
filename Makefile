@@ -38,11 +38,24 @@ format_json-build: image_builder-build
 publish_lambda-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_lambda
 
+
 test_lambda-build: image_builder-build
 	docker build \
     	--file ./test_lambda/Dockerfile \
     	--tag wellcome/test_lambda:latest \
     	./test_lambda
+
+test_python-build: image_builder-build
+	docker build \
+    	--file ./test_python/Dockerfile \
+    	--tag wellcome/test_python:latest \
+    	./test_python
+
+build_test_python-build: image_builder-build
+	docker build \
+    	--file ./build_test_python/Dockerfile \
+    	--tag wellcome/build_test_python:latest \
+    	./build_test_python
 
 publish_service-build: image_builder-build
 	./docker_run.py --dind -- wellcome/image_builder:latest --project=publish_service
