@@ -30,7 +30,7 @@ from tooling import compare_zip_files
 
 
 def cmd(*args):
-    return subprocess.check_output(list(args)).decode('ascii').strip()
+    return subprocess.check_output(list(args)).decode('utf8').strip()
 
 
 def git(*args):
