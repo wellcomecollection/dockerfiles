@@ -16,7 +16,8 @@
 set -o errexit
 set -o nounset
 
-SRC="$1/src"
+APP="$1"
+SRC="$APP/src"
 LABEL=$(basename $1)
 
 
@@ -35,25 +36,40 @@ fi
 
 # We compile the requirements into the test image, so we can skip
 # rebuilding it locally on subsequent runs.
-if [[ -f $ROOT/$SRC/requirements.txt || -f $ROOT/$SRC/test_requirements.txt ]]
+if [[ -f "$APP/requirements.txt" ||
+      -f "$APP/test_requirements.txt" ||
+      -f "$SRC/requirements.txt "||
+      -f "$SRC/test_requirements.txt" ]]
 then
 
-  DOCKERFILE=$SRC/.Dockerfile
-  echo "FROM wellcome/test_python:latest"               > $DOCKERFILE
+  DOCKERFILE=$APP/.Dockerfile
+  echo "FROM wellcome/test_python:latest"                             > "$DOCKERFILE"
+
+  if [[ -f $ROOT/$APP/requirements.txt ]]
+  then
+    echo "COPY requirements.txt /"                                    >> "$DOCKERFILE"
+    echo "RUN pip3 install -r /requirements.txt"                      >> "$DOCKERFILE"
+  fi
+
+  if [[ -f $ROOT/$APP/requirements.txt ]]
+  then
+    echo "COPY test_requirements.txt /"                               >> "$DOCKERFILE"
+    echo "RUN pip3 install -r /test_requirements.txt"                 >> "$DOCKERFILE"
+  fi
 
   if [[ -f $ROOT/$SRC/requirements.txt ]]
   then
-    echo "COPY requirements.txt /"                      >> $DOCKERFILE
-    echo "RUN pip3 install -r /requirements.txt"        >> $DOCKERFILE
+    echo "COPY src/requirements.txt /src/requirements.txt"            >> "$DOCKERFILE"
+    echo "RUN pip3 install -r /src/requirements.txt"                  >> "$DOCKERFILE"
   fi
 
   if [[ -f $ROOT/$SRC/test_requirements.txt ]]
   then
-    echo "COPY test_requirements.txt /"                 >> $DOCKERFILE
-    echo "RUN pip3 install -r /test_requirements.txt"   >> $DOCKERFILE
+    echo "COPY src/test_requirements.txt /src/test_requirements.txt"  >> "$DOCKERFILE"
+    echo "RUN pip3 install -r /src/test_requirements.txt"             >> "$DOCKERFILE"
   fi
 
-  docker build --tag $DOCKER_IMAGE --file $DOCKERFILE $SRC
+  docker build --tag $DOCKER_IMAGE --file $DOCKERFILE $APP
 else
   docker tag wellcome/test_python $DOCKER_IMAGE
 fi
