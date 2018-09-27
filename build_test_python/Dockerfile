@@ -1,14 +1,13 @@
 FROM alpine
 
 LABEL maintainer = "Wellcome Digital Platform team <wellcomedigitalplatform@wellcome.ac.uk>"
-LABEL description = "Build a lambda test image"
+LABEL description = "Build a Docker image for testing Python"
 
-RUN apk update && \
-    apk add docker git bash
+RUN apk add --update docker python
 
 VOLUME /repo
 WORKDIR /repo
 
-COPY build_python_test_image.sh /builds/build_python_test_image.sh
+COPY build_python_test_image.py /builds/build_python_test_image.py
 
-ENTRYPOINT ["/builds/build_python_test_image.sh"]
+ENTRYPOINT ["/builds/build_python_test_image.py"]
