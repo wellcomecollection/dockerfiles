@@ -21,7 +21,6 @@ Options:
 import os
 import subprocess
 import sys
-import uuid
 
 
 def build_dockerfile(project_path):
@@ -36,17 +35,16 @@ def build_dockerfile(project_path):
         'FROM wellcome/test_python'
     ]
 
-    for name in [
+    for idx, name in enumerate([
         'requirements.txt',
         'test_requirements.txt',
         'src/requirements.txt',
         'src/test_requirements.txt',
-    ]:
+    ]):
         if os.path.exists(os.path.join(project_path, name)):
-            reqs_id = str(uuid.uuid4())
             lines.extend([
-                'COPY %s /requirements_%s.txt' % (name, reqs_id),
-                'RUN pip3 install -r /requirements_%s.txt' % reqs_id,
+                'COPY %s /requirements_%d.txt' % (name, idx),
+                'RUN pip3 install -r /requirements_%d.txt' % idx,
             ])
 
     with open(dockerfile_path, 'w') as outfile:
