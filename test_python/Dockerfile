@@ -6,6 +6,4 @@ RUN pip3 install -r /requirements.txt
 WORKDIR /data
 VOLUME ["/data"]
 
-COPY run_tests.sh /
-
-ENTRYPOINT /run_tests.sh
+ENTRYPOINT ["py.test"]
