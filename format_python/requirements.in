@@ -1,1 +1,1 @@
-autoflake
+black
