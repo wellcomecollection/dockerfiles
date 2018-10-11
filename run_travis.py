@@ -44,11 +44,21 @@ if __name__ == '__main__':
         name = os.path.basename(docker_dir)
 
         _banner("Building", name)
-        subprocess.check_call(
-            ["docker", "build", "--tag", "wellcome/%s" % name, "."],
-            cwd=docker_dir
-        )
 
-        results[name] = True
+        image_name = "wellcome/%s:%s" % (name, build_number)
+
+        try:
+            subprocess.check_call(
+                ["docker", "build", "--tag", image_name, "."], cwd=docker_dir)
+
+            if task == "publish":
+                subprocess.check_call(["docker", "push", image_name])
+        except subprocess.CalledProcessError as err:
+            print("ERROR: %r" % err)
+            results[name] = False
+        else:
+            results[name] = True
+
+        results[name] = (rc == 0)
         _banner("Completed", name)
         print()
