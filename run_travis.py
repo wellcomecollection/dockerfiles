@@ -40,6 +40,16 @@ if __name__ == '__main__':
 
     results = {}
 
+    if task == "publish":
+        try:
+            subprocess.check_call([
+                "docker", "login",
+                "--username", "wellcometravis",
+                "--password", os.environ["PASSWORD"]
+            ])
+        except subprocess.CalledProcessError as err:
+            sys.exit("Error trying to authenticate with Docker Hub: %r" % err)
+
     for docker_dir in get_docker_dirs():
         name = os.path.basename(docker_dir)
 
