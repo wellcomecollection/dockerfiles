@@ -11,3 +11,13 @@ branches:
 
 script:
   - "./run_travis.py"
+
+env:
+  global:
+
+    # This encrypted environment variable contains the password for the
+    # wellcometravis Docker Hub account.  It was obtained by running:
+    #
+    #     $ travis encrypt PASSWORD=$PASSWORD
+    #
+    - secure: "CgVamwpdScwr/b+fwqRPP8vBGTxav/X8u8VthAN6NymExygGeydnwra+qYLvI2adC9E2RschmevfZKNyL0nLNjGLwxlGH83oSWG1+xH/bEM53KDa48pw5XHqeQH/jv0QkBVsJS3xs3nbSOMFldPSmenQ2FT/DFiFN6H7QmviskypOEe3hAQ1yayjPLoampgX8QuFRqbKahsOXaoB4mB790LIYEoYcqg+rA4Oo5eCMv61v8mW2F+XncfcLo++PCSQw8pRp9Xh/TxyYbwrLooyH4V2nZyw19IY9TSSEvAL6uTswZ0cd+S8Q+mvS5XQml2TxvTYqi9cW0TLHzGSLi7z4ExM7zHo1Pw8bXCvkRK3c0UPVXE4leYZR3i6lwMXhnlKfrnhEwrN8sO2h8x9k9ehIAALi8saA6Gy08oSx8PchoJqb7ZWUbnKM8MyR/EERFHblsPv/6eiEOASpY/p4hfgfzBIpDc6Nb73VByGxIOHxEaSkd/p6rW3x/pck9ZazzmhYXmMElIA12Us1T2ymwn4KE+lcPs3TcBjOkPBm7wthm6IXj3dNw5BLgwk3FGuZFd2rHxXrw9YPUqMzrJVumamlTNCU33a95slxrbQkwbWDR29kzS+3K0l6+po96BA/+3qxYkuQfrTFWQO3YBTLgH297lclyNHQycLYQD0t3XGoE0="
