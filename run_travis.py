@@ -24,11 +24,31 @@ def get_docker_dirs():
                 yield root
 
 
+def _banner(verb, name):
+    print("\033[92m*** %s:%s %s ***\033[0m" % (
+        verb, " " * (10 - len(verb)), name
+    ))
+
+
 if __name__ == '__main__':
     try:
         task = sys.argv[1]
     except IndexError:
         sys.exit("Usage: %s (build | publish)" % __file__)
 
-    for dirname in get_docker_dirs():
-        print(dirname)
+    build_number = os.environ['TRAVIS_BUILD_NUMBER']
+
+    results = {}
+
+    for docker_dir in get_docker_dirs():
+        name = os.path.basename(docker_dir)
+
+        _banner("Building", name)
+        subprocess.check_call(
+            ["docker", "build", "--tag", "wellcome/%s" % name, "."],
+            cwd=docker_dir
+        )
+
+        results[name] = True
+        _banner("Completed", name)
+        print()
