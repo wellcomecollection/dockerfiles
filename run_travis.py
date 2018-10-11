@@ -2,13 +2,6 @@
 # -*- encoding: utf-8
 """
 This script runs in Travis to build/publish our Docker images.
-
-Usage:
-
-    run_travis.py (build | publish)
-
-It only rebuilds/publishes images that have changed since the last build.
-
 """
 
 import os
@@ -31,12 +24,12 @@ def _banner(verb, name):
 
 
 if __name__ == '__main__':
-    try:
-        task = sys.argv[1]
-    except IndexError:
-        sys.exit("Usage: %s (build | publish)" % __file__)
+    if os.environ["TRAVIS_EVENT_TYPE"] == "push":
+        task = "publish"
+    else:
+        task = "build"
 
-    build_number = os.environ['TRAVIS_BUILD_NUMBER']
+    build_number = 1
 
     results = {}
 
