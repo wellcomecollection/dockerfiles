@@ -1,0 +1,13 @@
+language: "sh"
+
+sudo: "required"
+
+services:
+  - "docker"
+
+branches:
+  only:
+    - "master"
+
+script:
+  - "./run_travis.py"
