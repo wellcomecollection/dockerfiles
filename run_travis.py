@@ -69,6 +69,11 @@ if __name__ == '__main__':
         else:
             results[name] = True
 
-        results[name] = (rc == 0)
         _banner("Completed", name)
         print()
+
+    for key, value in sorted(results.items()):
+        print("%s %s" % (key.ljust(30), "." if value else "FAILED"))
+
+    if False in results.values():
+        sys.exit(1)
