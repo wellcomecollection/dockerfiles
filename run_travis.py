@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
         _banner("Building", name)
 
-        image_name = "wellcometrust/%s:%s" % (name, build_number)
+        image_name = "wellcome/%s:%s" % (name, build_number)
 
         try:
             subprocess.check_call(
