@@ -69,8 +69,9 @@ def build_lambda_local(path, name):
     print(f'*** Building Lambda ZIP for {name}')
     target = tempfile.mkdtemp()
 
-    # Copy all the associated files to the Lambda directory.
-    for f in os.listdir(path):
+    # Copy all the associated source files to the Lambda directory.
+    src = os.path.join(path, "src")
+    for f in os.listdir(src):
         if f.startswith((
             # Required for tests, but unneeded in our prod images
             'test_',
@@ -87,19 +88,22 @@ def build_lambda_local(path, name):
             continue
 
         shutil.copy(
-            src=os.path.join(path, f),
+            src=os.path.join(src, f),
             dst=os.path.join(target, os.path.basename(f))
         )
 
     # Now install any additional pip dependencies.
-    reqs_file = os.path.join(path, 'requirements.txt')
-    if os.path.exists(reqs_file):
-        print(f'*** Installing dependencies from requirements.txt')
-        subprocess.check_call([
-            'pip3', 'install', '--requirement', reqs_file, '--target', target
-        ])
-    else:
-        print(f'*** No requirements.txt found')
+    for reqs_file in [
+        os.path.join(path, "requirements.txt"),
+        os.path.join(path, "src", "requirements.txt"),
+    ]:
+        if os.path.exists(reqs_file):
+            print(f"*** Installing dependencies from {reqs_file}")
+            subprocess.check_call([
+                'pip3', 'install', '--requirement', reqs_file, '--target', target
+            ])
+        else:
+            print(f"*** No requirements.txt found at {reqs_file}")
 
     print(f'*** Creating zip bundle for {name}')
     os.makedirs(ZIP_DIR, exist_ok=True)
