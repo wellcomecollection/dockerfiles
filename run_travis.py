@@ -29,7 +29,7 @@ if __name__ == '__main__':
     else:
         task = "build"
 
-    build_number = 1
+    build_number = os.environ["TRAVIS_BUILD_NUMBER"]
 
     results = {}
 
