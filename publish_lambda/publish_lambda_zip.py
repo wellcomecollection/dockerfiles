@@ -87,10 +87,16 @@ def build_lambda_local(path, name):
         )):
             continue
 
-        shutil.copy(
-            src=os.path.join(src, f),
-            dst=os.path.join(target, os.path.basename(f))
-        )
+        try:
+            shutil.copy(
+                src=os.path.join(src, f),
+                dst=os.path.join(target, os.path.basename(f))
+            )
+        except IsADirectoryError:
+            shutil.copytree(
+                src=os.path.join(src, f),
+                dst=os.path.join(target, os.path.basename(f))
+            )
 
     # Now install any additional pip dependencies.
     for reqs_file in [
