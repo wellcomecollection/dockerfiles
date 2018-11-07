@@ -10,4 +10,4 @@ envsubst < /opt/docker/conf/application.conf.template > /opt/docker/conf/applica
 echo "Config: /opt/docker/conf/application.conf ==="
 cat /opt/docker/conf/application.conf
 
-/opt/docker/bin/"$PROJECT"
+/opt/docker/bin/"$PROJECT" -Dconfig.file=/opt/docker/conf/application.conf
