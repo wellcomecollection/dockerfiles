@@ -4,4 +4,6 @@ RUN mkdir -p /opt/docker
 
 EXPOSE 8888
 
-ENTRYPOINT ["/opt/docker/bin/$PROJECT"]
+COPY run.sh /run.sh
+
+ENTRYPOINT ["/run.sh"]
