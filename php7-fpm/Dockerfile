@@ -1,7 +1,7 @@
 FROM php:7.2-fpm-alpine
 
 RUN apk upgrade --update \
-  && apk add --no-cache freetype-dev libpng-dev libjpeg-turbo-dev libxml2-dev \
+  && apk add --no-cache freetype-dev libpng-dev libjpeg-turbo-dev libxml2-dev make \
   && docker-php-ext-install pdo_mysql opcache gd soap zip pcntl
 
 RUN docker-php-source extract \
