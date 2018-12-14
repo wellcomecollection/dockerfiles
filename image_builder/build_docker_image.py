@@ -1,69 +1,40 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
-"""
-Builds a Docker image for a project.
-
-Usage:
-  build_docker_image.py --project=<PROJECT> [--file=<FILE>] [--variant=<VARIANT>]
-  build_docker_image.py -h | --help
-
-Options:
-  -h --help                Show this screen
-  --project=<PROJECT>      Name of the Docker image to build
-  --file=<FILE>            Path to the Dockerfile (if not in docker/<PROJECT>)
-  --variant=<VARIANT>      The optional variant of this project (e.g. nginx)
-                           Relies on the Dockerfile accepting a variant ARG
-
-"""
 
 import os
 import subprocess
 
-import docopt
+import click
 
-from tooling import write_release_id, CURRENT_COMMIT, ROOT
+from tooling import CURRENT_COMMIT, write_release_id
+
+
+def build_image_tag(name):
+    return f"{name}:{CURRENT_COMMIT}"
+
+
+@click.command(context_settings={"ignore_unknown_options": True})
+@click.option("--name", help="Name of the Docker image to build", required=True)
+@click.option("--path", help="Path to the Dockerfile", required=True)
+@click.argument('docker_args', nargs=-1, type=click.UNPROCESSED)
+def build_docker_image(name, path, docker_args):
+    print(f"*** Building image {name!r} from Dockerfile {path!r}")
+
+    tag = build_image_tag(name)
+    print(f"*** New image will be tagged {tag!r}")
+
+    cmd = [
+        "docker", "build",
+        "--file", path,
+        "--tag", name
+    ] + list(docker_args) + [os.path.dirname(path)]
+
+    subprocess.check_call(cmd)
+    subprocess.check_call(["docker", "tag", name, tag])
+
+    print("*** Saving the release ID to .releases")
+    write_release_id(project=name, release_id=CURRENT_COMMIT)
 
 
 if __name__ == '__main__':
-    args = docopt.docopt(__doc__)
-
-    project = args['--project']
-    variant = args['--variant']
-
-    if args['--file']:
-        dockerfile = os.path.join(ROOT, args['--file'])
-    else:
-        dockerfile = os.path.join(ROOT, project, 'Dockerfile')
-
-    print('*** Building image for %s' % project, flush=True)
-
-    release_id = CURRENT_COMMIT
-
-    if variant is not None:
-        release_name = '%s_%s' % (project, variant)
-        tag = '%s:%s' % (release_name, release_id)
-    else:
-        tag = '%s:%s' % (project, release_id)
-        release_name = project
-
-    print('*** Image will be tagged %s' % tag, flush=True)
-
-    print('*** Building the new image for %s' % dockerfile, flush=True)
-
-    cmd = [
-        'docker', 'build',
-        '--build-arg', 'PROJECT=%s' % project,
-        '--file', dockerfile,
-        '--tag', release_name
-    ]
-
-    if variant is not None:
-        cmd.extend(['--build-arg', 'variant=%s' % variant])
-
-    cmd.append(os.path.dirname(dockerfile))
-    subprocess.check_call(cmd)
-
-    subprocess.check_call(['docker', 'tag', release_name, tag])
-
-    print('*** Saving the release ID to .releases', flush=True)
-    write_release_id(project=release_name, release_id=release_id)
+    build_docker_image()
