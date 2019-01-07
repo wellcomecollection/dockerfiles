@@ -1,4 +1,4 @@
-FROM anapsix/alpine-java
+FROM openjdk:11
 
 RUN mkdir -p /opt/docker
 
