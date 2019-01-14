@@ -2,6 +2,15 @@
 # -*- encoding: utf-8
 """
 This script runs in Travis to build/publish our Docker images.
+
+If this script runs in a pull request, it just checks the images can
+build successfully.
+
+If this script runs in a push to master, it builds the images and then
+publishes them to Docker Hub.
+
+It exits with code 0 (success) if the build/publish was successful,
+or code 1 (failure) if the build/publish fails for any image.
 """
 
 import os
@@ -9,18 +18,26 @@ import subprocess
 import sys
 
 
+ROOT = subprocess.check_call([
+    "git", "rev-parse", "--show-toplevel"]).decode("utf8").strip()
+
+
 def get_docker_dirs():
-    """Yields a list of directories containing Dockerfiles."""
-    for root, _, filenames in os.walk("."):
-        for f in filenames:
-            if f == "Dockerfile":
-                yield root
+    """
+    Yields every directory in the repo that contains a Dockerfile.
+    """
+    for root, _, filenames in os.walk(ROOT):
+        if "Dockerfile" in filenames:
+            yield root
 
 
-def _banner(verb, name):
-    print("\033[92m*** %s:%s %s ***\033[0m" % (
-        verb, " " * (10 - len(verb)), name
-    ))
+def print_banner(action, name):
+    """
+    Prints a coloured banner to stdout.
+    """
+    # The escape codes \033[92m and \033[0m are for printing in colour.
+    # See: https://stackoverflow.com/a/287944/1558022
+    print("\033[92m*** %s %s ***\033[0m" % ((action + ":").ljust(10), name))
 
 
 if __name__ == '__main__':
@@ -29,10 +46,16 @@ if __name__ == '__main__':
     else:
         task = "build"
 
+    # Images get tagged with their Travis build number -- which should be
+    # a monotonically increasing sequence, so we can easily see which image
+    # is "newest".
     build_number = os.environ["TRAVIS_BUILD_NUMBER"]
 
     results = {}
 
+    # Log in to Docker Hub.  Be careful about this subprocess call -- if it
+    # errors, the default exception would print our password to stderr.
+    # See https://alexwlchan.net/2018/05/beware-logged-errors/
     if task == "publish":
         try:
             subprocess.check_call([
@@ -46,13 +69,12 @@ if __name__ == '__main__':
     for docker_dir in get_docker_dirs():
         name = os.path.basename(docker_dir)
 
-        _banner("Building", name)
+        print_banner("Building", name)
 
         image_name = "wellcome/%s:%s" % (name, build_number)
 
         try:
-            subprocess.check_call(
-                ["docker", "build", "--tag", image_name, "."], cwd=docker_dir)
+            subprocess.check_call(["docker", "build", "--tag", image_name, docker_dir])
 
             if task == "publish":
                 subprocess.check_call(["docker", "push", image_name])
@@ -62,7 +84,7 @@ if __name__ == '__main__':
         else:
             results[name] = True
 
-        _banner("Completed", name)
+        print_banner("Completed", name)
         print()
 
     for key, value in sorted(results.items()):
