@@ -18,7 +18,7 @@ import subprocess
 import sys
 
 
-ROOT = subprocess.check_call([
+ROOT = subprocess.check_output([
     "git", "rev-parse", "--show-toplevel"]).decode("utf8").strip()
 
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
         except subprocess.CalledProcessError as err:
             sys.exit("Error trying to authenticate with Docker Hub: %r" % err)
 
-    for docker_dir in get_docker_dirs():
+    for docker_dir in sorted(get_docker_dirs()):
         name = os.path.basename(docker_dir)
 
         print_banner("Building", name)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
             results[name] = True
 
         print_banner("Completed", name)
-        print()
+        print("")
 
     for key, value in sorted(results.items()):
         print("%s %s" % (key.ljust(30), "." if value else "FAILED"))
