@@ -6,7 +6,7 @@ LABEL description "A Docker image for deploying our Docker images to AWS"
 RUN apk update && \
     apk add docker git python3
 
-RUN pip3 install awscli docopt boto3
+RUN pip3 install awscli click boto3
 
 COPY publish_service_to_aws.py /builds/publish_service_to_aws.py
 

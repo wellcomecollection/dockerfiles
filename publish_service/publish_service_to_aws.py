@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 """
-Push a Docker image to ECR and upload a release ID to S3.
-
-Usage:
-  publish_service_to_aws.py --namespace=<id> --project=<name> --infra-bucket=<bucket> [--sns-topic=<topic_arn>]
-  publish_service_to_aws.py -h | --help
-
-Options:
-  -h --help                Show this screen.
-  --namespace=<id>         Namespace for the project e.g. "uk.ac.wellcome"
-  --project=<project>      Name of the project (e.g. api, loris).  Assumes
-                           there's a Docker image of the same name.
-  --infra-bucket=<bucket>  Name of the infra bucket for storing release IDs.
-  --sns-topic=<topic_arn>  If supplied, send a message about the push to this
-                           SNS topic.
-
-This script looks up the release ID (which it assumes is the Docker tag)
-from the .releases directory in the root of the repo.
-
+Push a Docker image to ECR and upload a release ID to parameter store.
 """
 
 import os
@@ -27,30 +10,33 @@ import subprocess
 import sys
 
 import boto3
-import docopt
+import click
 
 
 def cmd(*args):
-    return subprocess.check_output(list(args)).decode('utf8').strip()
+    return subprocess.check_output(list(args)).decode("utf8").strip()
 
 
-def git(*args):
-    return cmd('git', *args)
-
-
-ROOT = git('rev-parse', '--show-toplevel')
-
-
-def ecr_repo_uri_from_name(ecr_client, name):
+def get_ecr_repo_uri_from_name(repo_name):
     """
     Given the name of an ECR repo (e.g. uk.ac.wellcome/api), return the URI
     for the repo.
     """
-    resp = ecr_client.describe_repositories(repositoryNames=[name])
+    ecr_client = boto3.client("ecr")
+    resp = ecr_client.describe_repositories(repositoryNames=[repo_name])
     try:
-        return resp['repositories'][0]['repositoryUri']
+        return resp["repositories"][0]["repositoryUri"]
     except (KeyError, IndexError) as e:
-        raise RuntimeError('Unable to look up repo URI for %r: %s' % (name, e))
+        raise RuntimeError(f"Unable to look up repo URI for {repo_name!r}: {e}")
+
+
+def get_release_image_tag(image_name):
+    repo_root = cmd("git", "rev-parse", "--show-toplevel")
+    release_file = os.path.join(repo_root, ".releases", image_name)
+    try:
+        return open(release_file).read().strip()
+    except FileNotFoundError:
+        return "latest"
 
 
 def ecr_login():
@@ -67,67 +53,55 @@ def ecr_login():
         sys.exit(err.returncode)
 
 
-if __name__ == '__main__':
-    args = docopt.docopt(__doc__)
+@click.command()
+@click.option("--namespace", default="uk.ac.wellcome")
+@click.option("--project_name", required=True)
+@click.option("--label", default="prod")
+@click.option("--image_name", required=True)
+def publish_service(namespace, project_name, label, image_name):
+    repo_name = f"{namespace}/{image_name}"
+    print(f"*** Publishing {repo_name} to AWS")
 
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket(args['--infra-bucket'])
-    ecr_client = boto3.client('ecr')
+    repo_uri = get_ecr_repo_uri_from_name(repo_name=repo_name)
+    print(f"*** ECR repo URI is {repo_uri}")
 
-    topic_arn = args['--sns-topic']
-
-    project = args['--project']
-    namespace = args['--namespace']
-
-    repo_name = '%s/%s' % (namespace, project)
-
-    print('*** Pushing %s to AWS' % repo_name)
-
-    # Get the release ID (which is the image tag)
-    release_file = os.path.join(ROOT, '.releases', project)
-    release_file_exists = True
-    try:
-        tag = open(release_file).read().strip()
-    except FileNotFoundError:
-        release_file_exists = False
-        tag = 'latest'
-    docker_image = '%s:%s' % (project, tag)
-
-    # Look up the URI of our ECR repo for authentication and push
-    repo_uri = ecr_repo_uri_from_name(ecr_client, name=repo_name)
-    print('*** ECR repo URI is %s' % repo_uri)
-
-    print('*** Authenticating for `docker push` with ECR')
+    print(f"*** Authenticating for `docker push` with ECR")
     ecr_login()
 
+    image_tag = get_release_image_tag(image_name=image_name)
+    local_image_name = f"{image_name}:{image_tag}"
+
     # Retag the image, prepend our ECR URI, then delete the retagged image
-    renamed_image_tag = '%s:%s' % (repo_uri, tag)
-    print('*** Pushing image %s to ECR' % docker_image)
+    remote_image_name = f"{repo_uri}:{image_tag}"
+    print(f"*** Pushing image {image_name} to ECR")
     try:
-        subprocess.check_call(['docker', 'tag', docker_image, renamed_image_tag])
-        subprocess.check_call(['docker', 'push', renamed_image_tag])
+        cmd('docker', 'tag', local_image_name, remote_image_name)
+        cmd('docker', 'push', remote_image_name)
     finally:
-        subprocess.check_call(['docker', 'rmi', renamed_image_tag])
+        cmd('docker', 'rmi', remote_image_name)
 
-    # Upload the release ID string to S3.
-    if release_file_exists:
-        print('*** Uploading release ID to S3')
-        bucket.upload_file(Filename=release_file, Key='releases/%s' % project)
+    # Upload the image URL to SSM.
+    #
+    # The SSM key is hierarchival, and is constructed in the following way:
+    #
+    #       /releases/:project/:label/:service
+    #
+    # For example:
+    #
+    #       /releases/catalogue/api/transformer
+    #       ~> 1234.dkr.ecr.eu-west-1.amazonaws.com/uk.ac.wellcome/api:5678
+    #
+    print("*** Uploading image URL to SSM")
+    ssm_client = boto3.client('ssm')
 
-    if topic_arn is not None:
-        import json
+    ssm_client.put_parameter(
+        Name=f"/releases/{project_name}/{label}/{image_name}",
+        Description=f"Docker image URL; auto-managed by {__file__}",
+        Value=remote_image_name,
+        Type="String",
+        Overwrite=True
+    )
 
-        sns_client = boto3.client('sns')
 
-        get_user_output = cmd('aws', 'iam', 'get-user')
-        iam_user = json.loads(get_user_output)['User']['UserName']
-
-        message = {
-            'commit_id': git('rev-parse', '--abbrev-ref', 'HEAD'),
-            'commit_msg': git('log', '-1', '--oneline', '--pretty=%B'),
-            'git_branch': git('rev-parse', '--abbrev-ref', 'HEAD'),
-            'iam_user': iam_user,
-            'project': project,
-            'push_type': 'ecr_image',
-        }
-        sns_client.publish(TopicArn=topic_arn, Message=json.dumps(message))
+if __name__ == "__main__":
+    publish_service()
