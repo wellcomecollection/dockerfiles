@@ -3,7 +3,7 @@
 """
 Downloads our .tfvars file from the specified S3 bucket.
 """
-
+import os
 import boto3
 
 
