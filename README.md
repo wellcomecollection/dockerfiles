@@ -6,6 +6,8 @@ A repository for dockerfiles created at the Wellcome Trust
 
 The container images here are built at https://hub.docker.com/u/wellcome
 
+[![Build Status](https://travis-ci.org/wellcometrust/dockerfiles.svg?branch=master)](https://travis-ci.org/wellcometrust/dockerfiles)
+
 ## Why bother?
 
 Many of the containers published here are used to provide build and testing tasks elsewhere. Containerising these tasks means they are reproducible _anywhere_ as easily in CI as locally. 
