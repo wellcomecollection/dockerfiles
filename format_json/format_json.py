@@ -37,7 +37,7 @@ if __name__ == '__main__':
             bad_files.append(f)
             continue
 
-        json_str = json.dumps(data, indent=2) + '\n'
+        json_str = json.dumps(data, indent=2, separators=(',',' : ')) + '\n'
         if json_str == f_contents:
             print(f'[OK]    {f}')
         else:
