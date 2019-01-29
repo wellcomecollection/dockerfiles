@@ -18,7 +18,7 @@ then
   if [ -e terraform.plan ]
   then
     echo "Running apply operation."
-    /app/notify.sh
+    # /app/notify.sh
     terraform apply terraform.plan
   else
     echo "terraform.plan not found. Have you run a plan?"
