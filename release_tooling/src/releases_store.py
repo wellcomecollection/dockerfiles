@@ -43,7 +43,7 @@ class DynamoDbReleaseStore:
 
     def get_latest_releases(self, limit=1):
         items = self.table.query(IndexName='project_gsi',
-                                 KeyConditionExpression=Key('project_id').eq(project_id),
+                                 KeyConditionExpression=Key('project_id').eq(self.project_id),
                                  ScanIndexForward=False,
                                  Limit=limit)
         return items['Items']
@@ -54,7 +54,7 @@ class DynamoDbReleaseStore:
         if items['Count'] == 1:
             return items['Items'][0]
         else:
-            raise ValueError(f"Latest release returned {items['Count']} results for {project_id}")
+            raise ValueError(f"Latest release returned {items['Count']} results for {self.project_id}")
 
 
     def get_recent_deployments(self, limit=10):
@@ -65,11 +65,10 @@ class DynamoDbReleaseStore:
         return items['Items']
 
 
-    def add_deployment(self, release_id, date_created, deployment):
+    def add_deployment(self, release_id, deployment):
         self.table.update_item(
             Key={
-                'release_id': release_id,
-                'date_created': date_created
+                'release_id': release_id
             },
             UpdateExpression="SET #deployments = list_append(#deployments, :d)",
             ExpressionAttributeNames={
@@ -81,8 +80,7 @@ class DynamoDbReleaseStore:
         )
         self.table.update_item(
             Key={
-                'release_id': release_id,
-                'date_created': date_created
+                'release_id': release_id
             },
             UpdateExpression="SET last_date_deployed = :d",
             ExpressionAttributeValues={
@@ -98,10 +96,6 @@ class DynamoDbReleaseStore:
                 {
                     'AttributeName': 'release_id',
                     'KeyType': 'HASH'
-                },
-                {
-                    'AttributeName': 'date_created',
-                    'KeyType': 'RANGE'
                 }
             ],
             AttributeDefinitions=[

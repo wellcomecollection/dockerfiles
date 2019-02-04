@@ -19,7 +19,7 @@ DEFAULT_PROJECT_FILEPATH = ".wellcome_project"
 @click.group()
 @click.option('--aws-profile', '-p')
 @click.option('--project-file', '-f', default=DEFAULT_PROJECT_FILEPATH)
-@click.option('--verbose', is_flag=True, help="Print verbose messages.")
+@click.option('--verbose', '-v', is_flag=True, help="Print verbose messages.")
 @click.pass_context
 def main(ctx, aws_profile, project_file, verbose):
     project = project_config.load(project_file) or {}
@@ -136,7 +136,6 @@ def deploy(ctx, release_id, environment_id, description):
         "description": description
     }
     releases_store.add_deployment(release['release_id'],
-                                  release['date_created'],
                                   deployment)
 
     parameter_store.put_services_to_images(environment_id, release['images'])
