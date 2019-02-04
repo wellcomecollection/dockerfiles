@@ -17,19 +17,6 @@ def cmd(*args):
     return subprocess.check_output(list(args)).decode("utf8").strip()
 
 
-def get_ecr_repo_uri_from_name(repo_name):
-    """
-    Given the name of an ECR repo (e.g. uk.ac.wellcome/api), return the URI
-    for the repo.
-    """
-    ecr_client = boto3.client("ecr")
-    resp = ecr_client.describe_repositories(repositoryNames=[repo_name])
-    try:
-        return resp["repositories"][0]["repositoryUri"]
-    except (KeyError, IndexError) as e:
-        raise RuntimeError(f"Unable to look up repo URI for {repo_name!r}: {e}")
-
-
 def get_release_image_tag(image_name):
     repo_root = cmd("git", "rev-parse", "--show-toplevel")
     release_file = os.path.join(repo_root, ".releases", image_name)
@@ -54,17 +41,12 @@ def ecr_login():
 
 
 @click.command()
-@click.option("--namespace", default="uk.ac.wellcome")
 @click.option("--project_name", required=True)
 @click.option("--label", default="prod")
 @click.option("--image_name", required=True)
-def publish_service(namespace, project_name, label, image_name):
-    repo_name = f"{namespace}/{image_name}"
-    print(f"*** Publishing {repo_name} to AWS")
-
-    repo_uri = get_ecr_repo_uri_from_name(repo_name=repo_name)
+@click.option("--repo_uri", required=True)
+def publish_service(namespace, project_name, label, image_name, repo_uri):
     print(f"*** ECR repo URI is {repo_uri}")
-
     print(f"*** Authenticating for `docker push` with ECR")
     ecr_login()
 
