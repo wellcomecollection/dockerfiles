@@ -54,7 +54,7 @@ def publish_service(namespace, project_name, label, image_name, repo_uri):
     local_image_name = f"{image_name}:{image_tag}"
 
     # Retag the image, prepend our ECR URI, then delete the retagged image
-    remote_image_name = f"{repo_uri}:{image_tag}"
+    remote_image_name = f"{repo_uri}:{local_image_name}"
     print(f"*** Pushing image {image_name} to ECR")
     try:
         cmd('docker', 'tag', local_image_name, remote_image_name)
