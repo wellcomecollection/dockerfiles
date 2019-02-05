@@ -17,19 +17,6 @@ def cmd(*args):
     return subprocess.check_output(list(args)).decode("utf8").strip()
 
 
-def get_ecr_repo_uri_from_name(repo_name):
-    """
-    Given the name of an ECR repo (e.g. uk.ac.wellcome/api), return the URI
-    for the repo.
-    """
-    ecr_client = boto3.client("ecr")
-    resp = ecr_client.describe_repositories(repositoryNames=[repo_name])
-    try:
-        return resp["repositories"][0]["repositoryUri"]
-    except (KeyError, IndexError) as e:
-        raise RuntimeError(f"Unable to look up repo URI for {repo_name!r}: {e}")
-
-
 def get_release_image_tag(image_name):
     repo_root = cmd("git", "rev-parse", "--show-toplevel")
     release_file = os.path.join(repo_root, ".releases", image_name)
@@ -39,7 +26,7 @@ def get_release_image_tag(image_name):
         return "latest"
 
 
-def ecr_login():
+def ecr_login(registry_id):
     """
     Authenticates for pushing to ECR.
     """
@@ -47,32 +34,33 @@ def ecr_login():
     # the command that failed.  This may include AWS credentials, so we
     # want to suppress the output in an error!
     try:
-        command = cmd('aws', 'ecr', 'get-login', '--no-include-email')
+        command = cmd(
+            'aws', 'ecr', 'get-login',
+            '--no-include-email',
+            '--registry-ids',
+            registry_id
+        )
         subprocess.check_call(shlex.split(command))
     except subprocess.CalledProcessError as err:
         sys.exit(err.returncode)
 
 
 @click.command()
-@click.option("--namespace", default="uk.ac.wellcome")
 @click.option("--project_name", required=True)
+@click.option("--registry_id", required=True)
 @click.option("--label", default="prod")
 @click.option("--image_name", required=True)
-def publish_service(namespace, project_name, label, image_name):
-    repo_name = f"{namespace}/{image_name}"
-    print(f"*** Publishing {repo_name} to AWS")
-
-    repo_uri = get_ecr_repo_uri_from_name(repo_name=repo_name)
+@click.option("--repo_uri", required=True)
+def publish_service(project_name, registry_id, label, image_name, repo_uri):
     print(f"*** ECR repo URI is {repo_uri}")
-
     print(f"*** Authenticating for `docker push` with ECR")
-    ecr_login()
+    ecr_login(registry_id)
 
     image_tag = get_release_image_tag(image_name=image_name)
     local_image_name = f"{image_name}:{image_tag}"
 
     # Retag the image, prepend our ECR URI, then delete the retagged image
-    remote_image_name = f"{repo_uri}:{image_tag}"
+    remote_image_name = f"{repo_uri}/{local_image_name}"
     print(f"*** Pushing image {image_name} to ECR")
     try:
         cmd('docker', 'tag', local_image_name, remote_image_name)
