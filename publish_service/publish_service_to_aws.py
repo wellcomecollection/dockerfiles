@@ -26,7 +26,7 @@ def get_release_image_tag(image_name):
         return "latest"
 
 
-def ecr_login():
+def ecr_login(registry_id):
     """
     Authenticates for pushing to ECR.
     """
@@ -34,7 +34,12 @@ def ecr_login():
     # the command that failed.  This may include AWS credentials, so we
     # want to suppress the output in an error!
     try:
-        command = cmd('aws', 'ecr', 'get-login', '--no-include-email')
+        command = cmd(
+            'aws', 'ecr', 'get-login',
+            '--no-include-email',
+            '--registry_ids',
+            registry_id
+        )
         subprocess.check_call(shlex.split(command))
     except subprocess.CalledProcessError as err:
         sys.exit(err.returncode)
@@ -42,13 +47,14 @@ def ecr_login():
 
 @click.command()
 @click.option("--project_name", required=True)
+@click.option("--registry_id", required=True)
 @click.option("--label", default="prod")
 @click.option("--image_name", required=True)
 @click.option("--repo_uri", required=True)
-def publish_service(project_name, label, image_name, repo_uri):
+def publish_service(project_name, registry_id, label, image_name, repo_uri):
     print(f"*** ECR repo URI is {repo_uri}")
     print(f"*** Authenticating for `docker push` with ECR")
-    ecr_login()
+    ecr_login(registry_id)
 
     image_tag = get_release_image_tag(image_name=image_name)
     local_image_name = f"{image_name}:{image_tag}"
