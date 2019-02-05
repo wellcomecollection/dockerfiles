@@ -37,8 +37,8 @@ def ecr_login(registry_id):
         command = cmd(
             'aws', 'ecr', 'get-login',
             '--no-include-email',
-            f"--registry-ids {registry_id}",
-
+            '--registry-ids',
+            registry_id
         )
         subprocess.check_call(shlex.split(command))
     except subprocess.CalledProcessError as err:
