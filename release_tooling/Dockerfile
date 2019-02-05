@@ -12,6 +12,7 @@ RUN pip3 install -r /requirements.txt
 VOLUME /data
 WORKDIR /data
 
-COPY src/release.py /builds/deploy.py
+COPY src /builds
+WORKDIR /builds
 
-ENTRYPOINT ["python3", "/builds/deploy.py"]
+ENTRYPOINT ["python3"]

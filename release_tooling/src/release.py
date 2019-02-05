@@ -4,9 +4,8 @@
   Release tool
 """
 import json
-import uuid
 import click
-import datetime
+import model
 import project_config
 from releases_store import DynamoDbReleaseStore
 from parameter_store import SsmParameterStore
@@ -22,7 +21,7 @@ DEFAULT_PROJECT_FILEPATH = ".wellcome_project"
 @click.option('--verbose', '-v', is_flag=True, help="Print verbose messages.")
 @click.pass_context
 def main(ctx, aws_profile, project_file, verbose):
-    project = project_config.load(project_file) or {}
+    project = project_config.load(project_file)
     if verbose and project:
         click.echo(f"Loaded {project_file} {project}")
 
@@ -81,20 +80,15 @@ def prepare(ctx, release_label, release_description):
     if not release_images:
         raise ValueError(f"No images found for {project['id']}/{release_label}")
 
-    release_id = str(uuid.uuid4())
+    release = model.create_release(
+        project['id'],
+        project['name'],
+        user_details.current_user(),
+        release_description,
+        release_images)
 
-    release = {
-        "release_id": release_id,
-        "project_id": project['id'],
-        "project_name": project['name'],
-        "date_created": datetime.datetime.utcnow().isoformat(),
-        "requested_by": user_details.current_user(),
-        "description": release_description,
-        "images": release_images,
-        "deployments": []
-    }
-    click.echo(f"created {release}")
     releases_store.put_release(release)
+    click.echo(f"Created {release}.")
 
 
 @main.command()
@@ -117,29 +111,31 @@ def deploy(ctx, release_id, environment_id, description):
     click.echo(json.dumps(release, sort_keys=True, indent=2))
     click.confirm("release?", abort=True)
 
+    environments = project_config.get_environments_lookup(project)
+    if not environment_id and len(environments) == 1:
+        environment_id = list(environments.values())[0]['id']
+        click.echo(f"Using environment '{environment_id}'")
+    if not environment_id:
+        environment_id = click.prompt(text="Enter the environment id", type=click.Choice(environments.keys()))
+
+    try:
+        environment = environments[environment_id]
+    except KeyError:
+        click.fail(f"Expected one environment with id {environment_id} in {environments}")
+
+    # ask for description after establishing environment_id
     if not description:
         description = click.prompt("Enter a description for this deployment")
 
-    environments = { e['id']: e for e in project['environments'] if 'id' in e }
-    if not environment_id:
-        environment_id = click.prompt(text="Enter the environment id", type=click.Choice(environments.keys()))
-    if not environment_id in environments:
-        raise ValueError(f"Expected one environment with id {environment_id} in {environments}")
-    else:
-        environment = environments[environment_id]
-
     user = user_details.current_user()
-    deployment = {
-        "environment": environment,
-        "date_created": datetime.datetime.utcnow().isoformat(),
-        "requested_by": user,
-        "description": description
-    }
+
+    deployment = model.create_deployment(environment, user, description)
+
     releases_store.add_deployment(release['release_id'],
                                   deployment)
 
     parameter_store.put_services_to_images(environment_id, release['images'])
-    click.echo(f"updated {environment_id}.")
+    click.echo(f"Updated {environment_id}.")
 
 
 @main.command()
