@@ -45,7 +45,7 @@ def ecr_login():
 @click.option("--label", default="prod")
 @click.option("--image_name", required=True)
 @click.option("--repo_uri", required=True)
-def publish_service(namespace, project_name, label, image_name, repo_uri):
+def publish_service(project_name, label, image_name, repo_uri):
     print(f"*** ECR repo URI is {repo_uri}")
     print(f"*** Authenticating for `docker push` with ECR")
     ecr_login()
