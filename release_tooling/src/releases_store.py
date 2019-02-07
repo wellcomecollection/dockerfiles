@@ -23,7 +23,7 @@ class DynamoDbReleaseStore:
             if client_error.response['Error']['Code'] == 'ResourceNotFoundException':
                 self._create_table()
             else:
-                raise(f"Unknown exception occurred while querying for {tablename} {client_error.response}")
+                raise(f"Unknown exception occurred while querying for {self.tablename} {client_error.response}")
 
 
     def put_release(self, release):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 """
-Push a Docker image to ECR and upload a release ID to parameter store.
+Push a container image to ECR and upload a release ID to SSM params.
 """
 
 import os
@@ -17,78 +17,92 @@ def cmd(*args):
     return subprocess.check_output(list(args)).decode("utf8").strip()
 
 
-def get_release_image_tag(image_name):
+def get_release_image_tag(service_id):
     repo_root = cmd("git", "rev-parse", "--show-toplevel")
-    release_file = os.path.join(repo_root, ".releases", image_name)
-    try:
-        return open(release_file).read().strip()
-    except FileNotFoundError:
-        return "latest"
+    release_file = os.path.join(repo_root, ".releases", service_id)
+
+    print(f"*** Retrieving image tag for {service_id} from {release_file}")
+
+    return open(release_file).read().strip()
 
 
-def ecr_login(registry_id):
-    """
-    Authenticates for pushing to ECR.
-    """
-    # Normally subprocess.check_[call|output] prints an error that includes
-    # the command that failed.  This may include AWS credentials, so we
-    # want to suppress the output in an error!
-    try:
-        command = cmd(
-            'aws', 'ecr', 'get-login',
-            '--no-include-email',
-            '--registry-ids',
-            registry_id
-        )
-        subprocess.check_call(shlex.split(command))
-    except subprocess.CalledProcessError as err:
-        sys.exit(err.returncode)
+def push_image_to_remote(account_id, namespace, service_id, image_tag, region_id):
+    local_image_name= f"{service_id}:{image_tag}"
+    remote_image_name = f"{account_id}.dkr.ecr.{region_id}.amazonaws.com/{namespace}/{local_image_name}"
 
+    print(f"*** Pushing {local_image_name} to {remote_image_name}")
 
-@click.command()
-@click.option("--project_name", required=True)
-@click.option("--registry_id", required=True)
-@click.option("--label", default="prod")
-@click.option("--image_name", required=True)
-@click.option("--repo_uri", required=True)
-def publish_service(project_name, registry_id, label, image_name, repo_uri):
-    print(f"*** ECR repo URI is {repo_uri}")
-    print(f"*** Authenticating for `docker push` with ECR")
-    ecr_login(registry_id)
-
-    image_tag = get_release_image_tag(image_name=image_name)
-    local_image_name = f"{image_name}:{image_tag}"
-
-    # Retag the image, prepend our ECR URI, then delete the retagged image
-    remote_image_name = f"{repo_uri}/{local_image_name}"
-    print(f"*** Pushing image {image_name} to ECR")
     try:
         cmd('docker', 'tag', local_image_name, remote_image_name)
         cmd('docker', 'push', remote_image_name)
     finally:
         cmd('docker', 'rmi', remote_image_name)
 
-    # Upload the image URL to SSM.
-    #
-    # The SSM key is hierarchival, and is constructed in the following way:
-    #
-    #       /releases/:project/:label/:service
-    #
-    # For example:
-    #
-    #       /releases/catalogue/api/transformer
-    #       ~> 1234.dkr.ecr.eu-west-1.amazonaws.com/uk.ac.wellcome/api:5678
-    #
-    print("*** Uploading image URL to SSM")
-    ssm_client = boto3.client('ssm')
+    return remote_image_name
 
+
+def ecr_login(account_id):
+    print(f"*** Authenticating {account_id} for `docker push` with ECR")
+
+    try:
+        command = cmd(
+            'aws', 'ecr', 'get-login',
+            '--no-include-email',
+            '--registry-ids',
+            account_id
+        )
+        subprocess.check_call(shlex.split(command))
+    except subprocess.CalledProcessError as err:
+        sys.exit(err.returncode)
+
+
+def update_ssm(project_id, service_id, label, remote_image_name):
+    ssm_path = f"/{project_id}/images/{label}/{service_id}"
+
+    print(f"*** Updating SSM path {ssm_path} to {remote_image_name}")
+
+    ssm_client = boto3.client('ssm')
     ssm_client.put_parameter(
-        Name=f"/releases/{project_name}/{label}/{image_name}",
+        Name=f"/{project_id}/images/{label}/{service_id}",
         Description=f"Docker image URL; auto-managed by {__file__}",
         Value=remote_image_name,
         Type="String",
         Overwrite=True
     )
+
+
+@click.command()
+@click.option("--project_id", required=True)
+@click.option("--service_id", required=True)
+@click.option("--account_id", required=True)
+@click.option("--region_id", required=True)
+@click.option("--namespace", required=True)
+@click.option("--label", default="prod")
+def publish_service(project_id, service_id, account_id, region_id, namespace, label):
+    print(f"*** Attempting to publish {project_id}/{service_id}")
+
+    ecr_login(account_id)
+
+    image_tag = get_release_image_tag(
+        service_id
+    )
+
+    remote_image_name = push_image_to_remote(
+        account_id,
+        namespace,
+        service_id,
+        image_tag,
+        region_id
+    )
+
+    update_ssm(
+        project_id,
+        service_id,
+        label,
+        remote_image_name
+    )
+
+    print(f"*** Done publishing {project_id}/{service_id}")
 
 
 if __name__ == "__main__":
