@@ -15,4 +15,4 @@ WORKDIR /data
 COPY src /builds
 WORKDIR /builds
 
-ENTRYPOINT ["python3"]
+ENTRYPOINT ["python3", "/builds/release.py"]

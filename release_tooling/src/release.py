@@ -112,6 +112,7 @@ def deploy(ctx, release_id, environment_id, description):
     click.confirm("release?", abort=True)
 
     environments = project_config.get_environments_lookup(project)
+
     if not environment_id and len(environments) == 1:
         environment_id = list(environments.values())[0]['id']
         click.echo(f"Using environment '{environment_id}'")
