@@ -269,4 +269,4 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        click.echo(str(e))
+        click.echo(repr(e))
