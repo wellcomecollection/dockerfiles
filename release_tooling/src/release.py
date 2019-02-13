@@ -73,7 +73,7 @@ def initialise(ctx, project_id, project_name, environment_id, environment_name):
 
 
 @main.command()
-@click.argument('environment_id')
+@click.argument('environment_id', required=False)
 @click.argument('release_id', required=False)
 @click.option('--description', '-d', help="Enter a description for this deployment")
 @click.pass_context
@@ -87,14 +87,6 @@ def deploy(ctx, environment_id, release_id, description):
     parameter_store = SsmParameterStore(project['id'], aws_profile)
     user_details = IamUserDetails(project['id'], aws_profile)
 
-    if not release_id:
-        release = releases_store.get_latest_release()
-    else:
-        release = releases_store.get_release(release_id)
-
-    click.echo(pprint(release))
-    click.confirm("release?", abort=True)
-
     environments = project_config.get_environments_lookup(project)
 
     if not environment_id and len(environments) == 1:
@@ -107,7 +99,15 @@ def deploy(ctx, environment_id, release_id, description):
     try:
         environment = environments[environment_id]
     except KeyError:
-        click.fail(f"Expected one environment with id {environment_id} in {environments}")
+        raise ValueError(f"Unknown environment. Expected '{environment_id}' in {environments}")
+
+    if not release_id:
+        release = releases_store.get_latest_release()
+    else:
+        release = releases_store.get_release(release_id)
+
+    click.echo(pprint(release))
+    click.confirm("release?", abort=True)
 
     # ask for description after establishing environment_id
     if not description:
