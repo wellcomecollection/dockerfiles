@@ -79,3 +79,9 @@ class SsmParameterStore:
             ['', self.project_id, 'images', label, service])
         ssm_key = "/".join(ssm_key_parts)
         return ssm_key
+
+def parse_ssm_key(ssm_key):
+    _, project_id, images_token, label, service = ssm_key.split("/")
+    if images_token != 'images':
+        raise ValueError(f"'images' token expected in 2nd position in {ssm_key}")
+    return project_id, label, service

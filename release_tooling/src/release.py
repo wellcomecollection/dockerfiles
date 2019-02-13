@@ -3,13 +3,14 @@
 """
   Release tool
 """
-import json
 import click
+import json
 import model
 import project_config
 from pprint import pprint
 from releases_store import DynamoDbReleaseStore
 from parameter_store import SsmParameterStore
+from parameter_store import parse_ssm_key
 from user_details import IamUserDetails
 from dateutil.parser import parse
 
@@ -214,16 +215,29 @@ def show_images(ctx, label):
 
     images = parameter_store.get_images(label=label)
     summaries = sorted(summarise_images(images), key=lambda k: k['name'])
-    previous_name = None
+    parsed_summaries = []
     for summary in summaries:
-        name = summary['name']
-        value = summary['value'].split("/")[2]
-        if previous_name:
-            if previous_name.split("/")[3] != name.split("/")[3]:
-                click.echo()
-        click.echo("{0:<50} {1}".format(name, value))
-        previous_name = name
+        project_id, label, service = parse_ssm_key(summary['name'])
+        repo_ecr, repo_namespace, image = summary['value'].split("/")
+        image_name, image_tag = image.split(":")
 
+        parsed_summaries.append({
+            'label': label,
+            'service': service,
+            'image_name': image_name,
+            'image_tag': image_tag
+        })
+    previous_label = None
+    for summary in parsed_summaries:
+        if previous_label and (previous_label != summary['label']):
+            click.echo()
+        click.echo("{0:<10} {1:<15} {2}".format(
+            summary['label'], summary['image_name'], fmttag(summary['image_tag'])))
+        previous_label = summary['label']
+
+
+def fmttag(tag):
+    return tag[:8]
 
 
 def summarise_images(images):
