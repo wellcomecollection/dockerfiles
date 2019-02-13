@@ -146,13 +146,13 @@ def prepare(ctx, from_label, release_service, service_label, release_description
         from_label = 'latest'
         release_images = parameter_store.get_services_to_images(from_label)
     elif not service_label:
-        raise ValueError("service_label is required")
+        raise click.UsageError("service_label is required")
     else:
         from_images = parameter_store.get_services_to_images(from_label)
         release_image = parameter_store.get_service_to_image(service_label, release_service)
         release_images = {**from_images, **release_image}
     if not release_images:
-        raise ValueError(f"No images found for {project['id']} {service_label} {release_service}")
+        raise click.UsageError(f"No images found for {project['id']} {service_label} {release_service}")
 
     release = model.create_release(
         project['id'],
