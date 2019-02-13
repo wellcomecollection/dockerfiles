@@ -231,7 +231,7 @@ def show_images(ctx, label):
     for summary in parsed_summaries:
         if previous_label and (previous_label != summary['label']):
             click.echo()
-        click.echo("{0:<10} {1:<15} {2}".format(
+        click.echo("{0:<10} {1:25} {2}".format(
             summary['label'], summary['image_name'], fmttag(summary['image_tag'])))
         previous_label = summary['label']
 
