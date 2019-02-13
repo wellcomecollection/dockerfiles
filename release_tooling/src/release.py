@@ -8,9 +8,10 @@ import json
 import model
 import project_config
 from pprint import pprint
+
 from releases_store import DynamoDbReleaseStore
 from parameter_store import SsmParameterStore
-from parameter_store import parse_ssm_key
+from pretty_printing import pprint_path_keyval_dict
 from user_details import IamUserDetails
 from dateutil.parser import parse
 
@@ -215,29 +216,16 @@ def show_images(ctx, label):
 
     images = parameter_store.get_images(label=label)
     summaries = sorted(summarise_images(images), key=lambda k: k['name'])
-    parsed_summaries = []
+    previous_name = None
+
+    paths = {}
     for summary in summaries:
-        project_id, label, service = parse_ssm_key(summary['name'])
-        repo_ecr, repo_namespace, image = summary['value'].split("/")
-        image_name, image_tag = image.split(":")
+        name = summary['name']
+        value = summary['value'].split("/")[2]
+        _, image_id = value.split(":")
+        paths[name] = image_id[:7]
 
-        parsed_summaries.append({
-            'label': label,
-            'service': service,
-            'image_name': image_name,
-            'image_tag': image_tag
-        })
-    previous_label = None
-    for summary in parsed_summaries:
-        if previous_label and (previous_label != summary['label']):
-            click.echo()
-        click.echo("{0:<10} {1:25} {2}".format(
-            summary['label'], summary['image_name'], fmttag(summary['image_tag'])))
-        previous_label = summary['label']
-
-
-def fmttag(tag):
-    return tag[:8]
+    click.echo("\n".join(pprint_path_keyval_dict(paths)))
 
 
 def summarise_images(images):
