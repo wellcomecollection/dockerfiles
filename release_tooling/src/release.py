@@ -9,6 +9,7 @@ import model
 import project_config
 from pprint import pprint
 
+from ecs_metadata import EcsMetadata
 from releases_store import DynamoDbReleaseStore
 from parameter_store import SsmParameterStore
 from pretty_printing import pprint_path_keyval_dict
@@ -226,6 +227,52 @@ def show_images(ctx, label):
         paths[name] = image_id[:7]
 
     click.echo("\n".join(pprint_path_keyval_dict(paths)))
+
+
+@main.command()
+@click.argument('cluster_name', required=False)
+@click.pass_context
+def show_ecs(ctx, cluster_name):
+    aws_profile = ctx.obj['aws_profile']
+    ecs_metadata = EcsMetadata(aws_profile)
+
+    if not cluster_name:
+        cluster_names = ecs_metadata.get_cluster_names()
+
+        image_names = [ecs_metadata.get_image_names(
+            cluster_name
+        ) for cluster_name in cluster_names]
+
+        summaries = list(zip(cluster_names, image_names))
+    else:
+        image_names = {
+            ecs_metadata.get_image_names(cluster_name)
+        }
+
+        summaries = [(cluster_name, image_names)]
+
+    paths = {}
+    for summary in summaries:
+        sub_paths = {}
+        name = summary[0]
+        images = [_format_ecr_uri(uri) for uri in summary[1]]
+
+        for image in images:
+            sub_paths[image['label']] = image['tag']
+
+        paths[name] = sub_paths
+
+    click.echo("\n".join(pprint_path_keyval_dict(paths)))
+
+
+def _format_ecr_uri(uri):
+    image_name = uri.split("/")[2]
+    image_label, image_tag = image_name.split(":")
+
+    return {
+        'label': image_label,
+        'tag': image_tag[:7]
+    }
 
 
 def summarise_images(images):
