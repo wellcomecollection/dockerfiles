@@ -9,6 +9,7 @@ import model
 import project_config
 from pprint import pprint
 
+from github_metadata import GitHubMetadata
 from ecs_metadata import EcsMetadata
 from releases_store import DynamoDbReleaseStore
 from parameter_store import SsmParameterStore
@@ -38,6 +39,7 @@ def main(ctx, aws_profile, project_file, verbose, dry_run):
     ctx.obj = {
         'project_filepath': project_file,
         'aws_profile': project.get('profile'),
+        'github_repository': project.get('github_repository'),
         'verbose': verbose,
         'dry_run': dry_run,
         'project': project
@@ -263,6 +265,26 @@ def show_ecs(ctx, cluster_name):
         paths[name] = sub_paths
 
     click.echo("\n".join(pprint_path_keyval_dict(paths)))
+
+
+@main.command()
+@click.argument('commit_ref', required=True)
+@click.pass_context
+def show_github(ctx, commit_ref):
+    github_repository = ctx.obj['github_repository']
+    github_metadata = GitHubMetadata(github_repository)
+
+    summaries = github_metadata.find_pull_requests(
+        commit_ref
+    )
+
+    click.echo('')
+    if not summaries:
+        click.echo("No matching pull requests found.")
+    else:
+        click.echo('Found pull requests:')
+        for summary in summaries:
+            click.echo("{number}: '{title}' {closed_at} {url}".format(**summary))
 
 
 def _format_ecr_uri(uri):

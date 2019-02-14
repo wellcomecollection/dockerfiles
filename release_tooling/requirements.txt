@@ -14,3 +14,4 @@ pytest==3.2.3
 python-dateutil==2.6.1    # via botocore
 s3transfer==0.1.11        # via boto3
 six==1.11.0               # via python-dateutil
+requests==2.18.4
