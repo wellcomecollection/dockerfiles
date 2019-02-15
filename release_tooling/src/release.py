@@ -301,7 +301,4 @@ def summarise_release_deployments(releases):
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        click.echo(repr(e))
+    main()
