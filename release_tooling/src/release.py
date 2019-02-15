@@ -26,14 +26,19 @@ DEFAULT_PROJECT_FILEPATH = ".wellcome_project"
 @click.option('--dry-run', '-d', is_flag=True, help="Don't make changes.")
 @click.pass_context
 def main(ctx, aws_profile, project_file, verbose, dry_run):
-    project = project_config.load(project_file)
+    try:
+        project = project_config.load(project_file)
+    except FileNotFoundError:
+        message = f"Couldn't find project metadata file {project_file!r}.  Run `initialise`."
+        raise click.UsageError(message) from None
+
     if verbose and project:
         click.echo(f"Loaded {project_file} {project}")
 
     if aws_profile:
         project['profile'] = aws_profile
-    if verbose:
-        click.echo(f"Using aws_profile {project['profile']}")
+        if verbose:
+            click.echo(f"Using aws_profile {project['profile']}")
 
     ctx.obj = {
         'project_filepath': project_file,
@@ -301,7 +306,4 @@ def summarise_release_deployments(releases):
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        click.echo(repr(e))
+    main()
