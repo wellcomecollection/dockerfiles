@@ -32,8 +32,8 @@ def main(ctx, aws_profile, project_file, verbose, dry_run):
 
     if aws_profile:
         project['profile'] = aws_profile
-    if verbose:
-        click.echo(f"Using aws_profile {project['profile']}")
+        if verbose:
+            click.echo(f"Using aws_profile {project['profile']}")
 
     ctx.obj = {
         'project_filepath': project_file,
