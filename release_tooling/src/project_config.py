@@ -1,13 +1,12 @@
-import os
+# -*- encoding: utf-8
+
 import json
+import os
 
 
 def load(project_filepath):
-    try:
-        with open(project_filepath) as infile:
-            return json.load(infile)
-    except FileNotFoundError:
-        return {}
+    with open(project_filepath) as infile:
+        return json.load(infile)
 
 
 def save(project_filepath, project):
