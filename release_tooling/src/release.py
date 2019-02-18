@@ -13,7 +13,7 @@ from github_metadata import GitHubMetadata
 from ecs_metadata import EcsMetadata
 from releases_store import DynamoDbReleaseStore
 from parameter_store import SsmParameterStore
-from pretty_printing import pprint_path_keyval_dict
+from pretty_printing import pprint_path_keyval_dict, pprint_nested_tree
 from user_details import IamUserDetails
 from dateutil.parser import parse
 
@@ -204,7 +204,7 @@ def show_deployments(ctx, release_id):
         releases = releases_store.get_recent_deployments()
     else:
         releases = [releases_store.get_release(release_id)]
-    summaries = summarise_release_deployments(releases)
+    summaries = _summarise_release_deployments(releases)
     for summary in summaries:
         click.echo("{release_id} {environment_id} {deployed_date} '{description}'".format(**summary))
 
@@ -218,15 +218,19 @@ def show_images(ctx, label):
     parameter_store = SsmParameterStore(project['id'], aws_profile)
 
     images = parameter_store.get_images(label=label)
-    summaries = sorted(summarise_images(images), key=lambda k: k['name'])
-    previous_name = None
+
+    summaries = sorted(_summarise_ssm_response(images), key=lambda k: k['name'])
 
     paths = {}
     for summary in summaries:
+        result = {}
+        ecr_uri = _format_ecr_uri(summary['value'])
         name = summary['name']
-        value = summary['value'].split("/")[2]
-        _, image_id = value.split(":")
-        paths[name] = image_id[:7]
+
+        result['image_name'] = "{label:>25}:{tag}".format(**ecr_uri)
+        result['last_modified'] = summary['last_modified']
+
+        paths[name] = "{last_modified} {image_name}".format(**result)
 
     click.echo("\n".join(pprint_path_keyval_dict(paths)))
 
@@ -241,28 +245,51 @@ def show_ecs(ctx, cluster_name):
     if not cluster_name:
         cluster_names = ecs_metadata.get_cluster_names()
 
-        image_names = [ecs_metadata.get_image_names(
+        cluster_summaries = [ecs_metadata.get_summary(
             cluster_name
         ) for cluster_name in cluster_names]
 
-        summaries = list(zip(cluster_names, image_names))
+        zipped_summaries = list(zip(
+            cluster_names,
+            cluster_summaries)
+        )
+
+        summaries =[{
+            'cluster_name': summary[0],
+            'cluster_summary': summary[1]
+        } for summary in zipped_summaries]
     else:
-        image_names = {
-            ecs_metadata.get_image_names(cluster_name)
+        cluster_summary = {
+            ecs_metadata.get_summary(cluster_name)
         }
 
-        summaries = [(cluster_name, image_names)]
+        summaries = [{
+            'cluster_name': cluster_name,
+            'cluster_summary': cluster_summary
+        }]
 
     paths = {}
     for summary in summaries:
-        sub_paths = {}
-        name = summary[0]
-        images = [_format_ecr_uri(uri) for uri in summary[1]]
 
-        for image in images:
-            sub_paths[image['label']] = image['tag']
+        subpaths = {}
+        ecs_summary = {}
+        for service_name in summary['cluster_summary']:
+            service = summary['cluster_summary'][service_name]
 
-        paths[name] = sub_paths
+            ecr_uri = _format_ecr_uri(service['images'])
+
+            ecs_summary['task_version'] = service['task_definition']['revision']
+            ecs_summary['image_label'] = ecr_uri['label'] + ":" + ecr_uri['tag']
+            ecs_summary['service_name'] = service['service']['service_name']
+            ecs_summary['deployed_at'] = next(iter(service['deployments']))
+
+            summary_text = "{deployed_at:>30}{image_label:>30}".format(
+                **ecs_summary
+            )
+
+            subpaths[service_name] = summary_text
+
+        paths[summary['cluster_name']] = subpaths
 
     click.echo("\n".join(pprint_path_keyval_dict(paths)))
 
@@ -282,9 +309,65 @@ def show_github(ctx, commit_ref):
     if not summaries:
         click.echo("No matching pull requests found.")
     else:
-        click.echo('Found pull requests:')
         for summary in summaries:
-            click.echo("{number}: '{title}' {closed_at} {url}".format(**summary))
+            click.echo("{ref:>8} \x1b[1;32m{title}\x1b[0m".format(**summary))
+            click.echo("{:>8} Closed at {}".format('',summary['closed_at']))
+            click.echo("{:>8} {}".format('',summary['url']))
+
+@main.command()
+@click.argument('cluster_name', required=True)
+@click.argument('stage_label', required=True)
+@click.pass_context
+def verify_deployed(ctx, cluster_name, stage_label):
+    project = ctx.obj['project']
+    aws_profile = ctx.obj['aws_profile']
+
+    ecs_metadata = EcsMetadata(aws_profile)
+    parameter_store = SsmParameterStore(project['id'], aws_profile)
+
+    cluster_metadata = ecs_metadata.get_summary(
+        cluster_name
+    )
+
+    ssm_parameters = parameter_store.get_images(label=stage_label)
+
+    cluster_images =  [cluster_metadata[service]['images'] for service in cluster_metadata]
+    ssm_images = [parameter['Value'] for parameter in ssm_parameters]
+
+    cluster_set = frozenset(cluster_images)
+    ssm_set = frozenset(ssm_images)
+
+    if(cluster_set.issubset(ssm_set)):
+        click.echo("\nStage is OK\n")
+    else:
+        click.echo(f"\nStage is out of sync!\n")
+        diff_images = list(cluster_set.difference(ssm_set))
+
+        ssm_images_formatted = [_format_ecr_uri(uri) for uri in ssm_images]
+        cluster_images_formatted = [_format_ecr_uri(uri) for uri in cluster_images]
+        diff_images_formatted = [_format_ecr_uri(uri) for uri in diff_images]
+
+        ssm_paths = {}
+        for ssm_image in ssm_images_formatted:
+            ssm_paths[ssm_image['label']] = ssm_image['tag']
+
+        cluster_paths = {}
+        for cluster_image in cluster_images_formatted:
+            cluster_paths[cluster_image['label']] = cluster_image['tag']
+
+        diff_paths = {}
+        for diff_image in diff_images_formatted:
+            diff_paths[diff_image['label']] = diff_image['tag']
+
+        paths = {
+            f"Stage: {stage_label}": ssm_paths,
+            f"Cluster: {cluster_name}": cluster_paths,
+            "!!! NOT DEPLOYED !!!": diff_paths
+        }
+
+        click.echo("\n".join(pprint_path_keyval_dict(paths)))
+
+
 
 
 def _format_ecr_uri(uri):
@@ -297,17 +380,19 @@ def _format_ecr_uri(uri):
     }
 
 
-def summarise_images(images):
+def _summarise_ssm_response(images):
     summaries = []
     for image in images:
         summaries.append({
                 'name': image['Name'],
-                'value': image['Value']
+                'value': image['Value'],
+                'last_modified': image['LastModifiedDate'].strftime('%d-%m-%YT%H:%M')
         })
     return summaries
 
 
-def summarise_release_deployments(releases):
+
+def _summarise_release_deployments(releases):
     summaries = []
     for r in releases:
         for d in r['deployments']:

@@ -11,6 +11,7 @@ class SsmParameterStore:
     def get_images(self, label=None):
         ssm_path = self.create_ssm_key(label)
         response = self._get_parameters(ssm_path)
+
         parameters = response['parameters']
         while response['next_token']:
             response = self._get_parameters(ssm_path, response['next_token'])
@@ -32,6 +33,7 @@ class SsmParameterStore:
                 MaxResults=10)
         if response['ResponseMetadata']['HTTPStatusCode'] != 200:
             raise ValueError(f"SSM get parameters failed {response['ResponseMetadata']}")
+
         return {
             'parameters': response['Parameters'],
             'next_token': response.get('NextToken', None)
@@ -49,6 +51,7 @@ class SsmParameterStore:
         images_path = self.create_ssm_key(label)
         parameters = self.ssm.get_parameters_by_path(Path=images_path)
         ssm_parameters = {d["Name"]: d["Value"] for d in parameters["Parameters"]}
+
         return {
             self._image_to_service_name(key): value for key, value in ssm_parameters.items()
         }
@@ -57,6 +60,7 @@ class SsmParameterStore:
     def get_service_to_image(self, label, service):
         image_path = self.create_ssm_key(label, service)
         parameter = self.ssm.get_parameter(Name=image_path)
+
         return {self._image_to_service_name(parameter["Parameter"]["Name"]): parameter["Parameter"]["Value"]}
 
 

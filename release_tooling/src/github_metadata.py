@@ -21,15 +21,19 @@ class GitHubMetadata:
             headers={"Accept": "application/vnd.github.v3+json"}
         )
 
+        response.raise_for_status()
         response_json = response.json()
 
-        return [self._summarise_pull_request(item) for item in response_json['items']]
+        return [self._summarise_pull_request(
+            commit_ref,
+            item
+        ) for item in response_json['items']]
 
 
-    def _summarise_pull_request(self, pull_request):
+    def _summarise_pull_request(self, commit_ref, pull_request):
         return {
-            'number': pull_request['number'],
+            'ref': commit_ref,
             'title': pull_request['title'],
             'closed_at' :pull_request['closed_at'],
-            'url': pull_request['pull_request']['url']
+            'url': pull_request['pull_request']['html_url']
         }
