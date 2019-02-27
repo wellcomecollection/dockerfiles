@@ -386,14 +386,12 @@ def _format_ecr_uri(uri):
 
 
 def _summarise_ssm_response(images):
-    summaries = []
     for image in images:
-        summaries.append({
+        yield {
                 'name': image['Name'],
                 'value': image['Value'],
                 'last_modified': image['LastModifiedDate'].strftime('%d-%m-%YT%H:%M')
-        })
-    return summaries
+        }
 
 
 
