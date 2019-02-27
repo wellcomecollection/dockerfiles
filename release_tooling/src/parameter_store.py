@@ -7,37 +7,19 @@ class SsmParameterStore:
         self.session = boto3.session.Session(profile_name=aws_profile_name)
         self.ssm = self.session.client('ssm')
 
+    def get_parameters_by_path(self, *args, **kwargs):
+        paginator = self.ssm.get_paginator("get_parameters_by_path")
+
+        for page in paginator.paginate(*args, **kwargs):
+            yield from page["Parameters"]
 
     def get_images(self, label=None):
         ssm_path = self.create_ssm_key(label)
-        response = self._get_parameters(ssm_path)
 
-        parameters = response['parameters']
-        while response['next_token']:
-            response = self._get_parameters(ssm_path, response['next_token'])
-            parameters = parameters + response['parameters']
-        return parameters
-
-
-    def _get_parameters(self, path, next_token=None):
-        if next_token:
-            response = self.ssm.get_parameters_by_path(
-                Path=path,
-                Recursive=True,
-                NextToken=next_token,
-                MaxResults=10)
-        else:
-            response = self.ssm.get_parameters_by_path(
-                Path=path,
-                Recursive=True,
-                MaxResults=10)
-        if response['ResponseMetadata']['HTTPStatusCode'] != 200:
-            raise ValueError(f"SSM get parameters failed {response['ResponseMetadata']}")
-
-        return {
-            'parameters': response['Parameters'],
-            'next_token': response.get('NextToken', None)
-        }
+        return self.get_parameters_by_path(
+            Path=ssm_path,
+            Recursive=True
+        )
 
 
     def _get_parameter(self, path):
@@ -48,9 +30,7 @@ class SsmParameterStore:
 
 
     def get_services_to_images(self, label):
-        images_path = self.create_ssm_key(label)
-        parameters = self.ssm.get_parameters_by_path(Path=images_path)
-        ssm_parameters = {d["Name"]: d["Value"] for d in parameters["Parameters"]}
+        ssm_parameters = {d["Name"]: d["Value"] for d in self.get_images(label)}
 
         return {
             self._image_to_service_name(key): value for key, value in ssm_parameters.items()
