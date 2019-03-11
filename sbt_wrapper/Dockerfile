@@ -1,12 +1,13 @@
-FROM openjdk:8-alpine
+FROM openjdk:11
 
 LABEL maintainer "Wellcome <wellcomedigitalplatform@wellcome.ac.uk>"
 LABEL description "A Docker image used for building sbt projects in the Wellcome Digital Platform"
 
-RUN apk add --update bash curl docker py-pip
+RUN apt-get update
+RUN apt-get install -y bash curl docker python3-pip
 RUN pip install docker-compose
 
-ENV SBT_VERSION 0.13.17
+ENV SBT_VERSION 1.2.8
 ENV SBT_HOME /usr/local/sbt
 ENV PATH ${PATH}:${SBT_HOME}/bin
 
