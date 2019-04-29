@@ -4,7 +4,7 @@ LABEL maintainer "Wellcome <wellcomedigitalplatform@wellcome.ac.uk>"
 LABEL description "A Docker image used for building sbt projects in the Wellcome Digital Platform"
 
 RUN apk add --update bash curl docker py-pip
-RUN pip install docker-compose
+RUN pip install docker-compose~=1.23.0
 
 ENV SBT_VERSION 0.13.17
 ENV SBT_HOME /usr/local/sbt
