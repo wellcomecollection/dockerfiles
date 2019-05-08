@@ -28,10 +28,18 @@ DEFAULT_PROJECT_FILEPATH = ".wellcome_project"
 @click.pass_context
 def main(ctx, aws_profile, project_file, verbose, dry_run):
     try:
-        project = project_config.load(project_file)
+        projects = project_config.load(project_file)
     except FileNotFoundError:
         message = f"Couldn't find project metadata file {project_file!r}.  Run `initialise`."
         raise click.UsageError(message) from None
+
+    if len(projects) == 1:
+        project_id = projects[0].id
+    else:
+        project_ids = [project['id'] for project in projects]
+        project_id = click.prompt(text="Enter the project ID", type=click.Choice(project_ids))
+
+    project = next(project for project in projects if project['id'] == project_id)
 
     if verbose and project:
         click.echo(f"Loaded {project_file} {project}")
@@ -40,6 +48,7 @@ def main(ctx, aws_profile, project_file, verbose, dry_run):
         project['profile'] = aws_profile
         if verbose:
             click.echo(f"Using aws_profile {project['profile']}")
+
 
     ctx.obj = {
         'project_filepath': project_file,
