@@ -33,13 +33,14 @@ def main(ctx, aws_profile, project_file, verbose, dry_run):
         message = f"Couldn't find project metadata file {project_file!r}.  Run `initialise`."
         raise click.UsageError(message) from None
 
-    if len(projects) == 1:
-        project_id = projects[0].id
-    else:
-        project_ids = [project['id'] for project in projects]
-        project_id = click.prompt(text="Enter the project ID", type=click.Choice(project_ids))
 
-    project = next(project for project in projects if project['id'] == project_id)
+    if len(projects) == 1:
+        project = list(projects.items())[0]
+    else:
+        project_id = click.prompt(text="Enter the project ID", type=click.Choice(projects.keys()))
+
+    project = projects[project_id]
+    project['id'] = project_id
 
     if verbose and project:
         click.echo(f"Loaded {project_file} {project}")
