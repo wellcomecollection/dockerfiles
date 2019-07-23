@@ -62,3 +62,7 @@ Show the `latest` or deployments for the specified release
 
 ### show-images
 Show the current images for all labels
+
+
+# helpers
+You can use [one of our shell helpers](./helpers) to run this docker container locally
