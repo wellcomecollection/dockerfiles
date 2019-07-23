@@ -4,10 +4,26 @@ from boto3.dynamodb.conditions import Key
 
 
 class DynamoDbReleaseStore:
-    def __init__(self, project_id, aws_profile_name=None):
+    def __init__(self, project_id, role_arn=None):
         self.project_id = project_id
         self.table_name = f"wellcome-releases-{project_id}"
-        self.session = boto3.session.Session(profile_name=aws_profile_name)
+
+        if role_arn:
+            client = boto3.client('sts')
+
+            response = client.assume_role(
+                RoleArn=role_arn,
+                RoleSessionName="ReleaseToolDynamoDbReleaseStore"
+            )
+
+            self.session = boto3.session.Session(
+                aws_access_key_id=response['Credentials']['AccessKeyId'],
+                aws_secret_access_key=response['Credentials']['SecretAccessKey'],
+                aws_session_token=response['Credentials']['SessionToken']
+            )
+        else:
+            self.session = boto3.session.Session()
+
         self.dynamodb = self.session.resource("dynamodb")
         self.table = self.dynamodb.Table(self.table_name)
 

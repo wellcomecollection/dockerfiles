@@ -2,8 +2,23 @@ import boto3
 import itertools
 
 class EcsMetadata:
-    def __init__(self, aws_profile_name=None):
-        self.session = boto3.session.Session(profile_name=aws_profile_name)
+    def __init__(self, role_arn=None):
+        if role_arn:
+            client = boto3.client('sts')
+
+            response = client.assume_role(
+                RoleArn=role_arn,
+                RoleSessionName="ReleaseToolEcsMetadata"
+            )
+
+            self.session = boto3.session.Session(
+                aws_access_key_id=response['Credentials']['AccessKeyId'],
+                aws_secret_access_key=response['Credentials']['SecretAccessKey'],
+                aws_session_token=response['Credentials']['SessionToken']
+            )
+        else:
+            self.session = boto3.session.Session()
+
         self.ecs = self.session.client('ecs')
 
     def get_clusters(self):
