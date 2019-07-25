@@ -95,9 +95,9 @@ def update_ssm(project_id, service_id, label, remote_image_name, profile_name):
 @click.option("--account_id", required=True)
 @click.option("--region_id", required=True)
 @click.option("--namespace", required=True)
-@click.option("--role_arn", required=False)
-@click.option("--label", default="prod")
-def publish_service(project_id, service_id, account_id, region_id, namespace, role_arn, label):
+@click.option("--label", default="latest")
+@click.option("--role_arn")
+def publish_service(project_id, service_id, account_id, region_id, namespace, label, role_arn):
     print(f"*** Attempting to publish {project_id}/{service_id}")
 
     profile_name = None
