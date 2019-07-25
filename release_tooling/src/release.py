@@ -21,12 +21,12 @@ DEFAULT_PROJECT_FILEPATH = ".wellcome_project"
 
 
 @click.group()
-@click.option('--aws-profile', '-p')
 @click.option('--project-file', '-f', default=DEFAULT_PROJECT_FILEPATH)
 @click.option('--verbose', '-v', is_flag=True, help="Print verbose messages.")
 @click.option('--dry-run', '-d', is_flag=True, help="Don't make changes.")
+@click.option("--role-arn")
 @click.pass_context
-def main(ctx, aws_profile, project_file, verbose, dry_run):
+def main(ctx, project_file, verbose, dry_run, role_arn):
     try:
         projects = project_config.load(project_file)
     except FileNotFoundError:
@@ -50,15 +50,14 @@ def main(ctx, aws_profile, project_file, verbose, dry_run):
     if verbose and project:
         click.echo(f"Loaded {project_file} {project}")
 
-    if aws_profile:
-        project['profile'] = aws_profile
+    if role_arn:
+        project['role_arn'] = role_arn
         if verbose:
-            click.echo(f"Using aws_profile {project['profile']}")
-
+            click.echo(f"Using role_arn {project['role_arn']}")
 
     ctx.obj = {
         'project_filepath': project_file,
-        'aws_profile': project.get('profile'),
+        'role_arn': project.get('role_arn'),
         'github_repository': project.get('github_repository'),
         'verbose': verbose,
         'dry_run': dry_run,
@@ -74,13 +73,25 @@ def main(ctx, aws_profile, project_file, verbose, dry_run):
 @click.pass_context
 def initialise(ctx, project_id, project_name, environment_id, environment_name):
     project_filepath = ctx.obj['project_filepath']
-    aws_profile = ctx.obj['aws_profile']
+
+    role_arn = ctx.obj['role_arn']
     verbose = ctx.obj['verbose']
     dry_run = ctx.obj['dry_run']
-    releases_store = DynamoDbReleaseStore(project_id, aws_profile)
 
-    project = {'id': project_id, 'name': project_name, 'profile': aws_profile,
-               'environments': [{'id': environment_id, 'name': environment_name}]}
+    releases_store = DynamoDbReleaseStore(project_id, role_arn)
+
+    project = {
+        'id': project_id,
+        'name': project_name,
+        'role_arn': role_arn,
+        'environments': [
+            {
+                'id': environment_id,
+                'name': environment_name
+            }
+        ]
+    }
+
     if verbose:
         click.echo(pprint(project))
     if not dry_run:
@@ -104,13 +115,13 @@ def initialise(ctx, project_id, project_name, environment_id, environment_name):
 @click.pass_context
 def deploy(ctx, environment_id, release_id, description):
     project = ctx.obj['project']
-    aws_profile = ctx.obj['aws_profile']
+    role_arn = ctx.obj['role_arn']
     verbose = ctx.obj['verbose']
     dry_run = ctx.obj['dry_run']
 
-    releases_store = DynamoDbReleaseStore(project['id'], aws_profile)
-    parameter_store = SsmParameterStore(project['id'], aws_profile)
-    user_details = IamUserDetails(project['id'], aws_profile)
+    releases_store = DynamoDbReleaseStore(project['id'], role_arn)
+    parameter_store = SsmParameterStore(project['id'], role_arn)
+    user_details = IamUserDetails(project['id'], role_arn)
 
     environments = project_config.get_environments_lookup(project)
 
@@ -159,13 +170,13 @@ def deploy(ctx, environment_id, release_id, description):
 @click.pass_context
 def prepare(ctx, from_label, release_service, service_label, release_description):
     project = ctx.obj['project']
-    aws_profile = ctx.obj['aws_profile']
+    role_arn = ctx.obj['role_arn']
     verbose = ctx.obj['verbose']
     dry_run = ctx.obj['dry_run']
 
-    releases_store = DynamoDbReleaseStore(project['id'], aws_profile)
-    parameter_store = SsmParameterStore(project['id'], aws_profile)
-    user_details = IamUserDetails(project['id'], aws_profile)
+    releases_store = DynamoDbReleaseStore(project['id'], role_arn)
+    parameter_store = SsmParameterStore(project['id'], role_arn)
+    user_details = IamUserDetails(project['id'], role_arn)
 
     if not from_label:
         from_label = 'latest'
@@ -204,8 +215,8 @@ def prepare(ctx, from_label, release_service, service_label, release_description
 @click.pass_context
 def show_release(ctx, release_id):
     project = ctx.obj['project']
-    aws_profile = ctx.obj['aws_profile']
-    releases_store = DynamoDbReleaseStore(project['id'], aws_profile)
+    role_arn = ctx.obj['role_arn']
+    releases_store = DynamoDbReleaseStore(project['id'], role_arn)
     if not release_id:
         release = releases_store.get_latest_release()
     else:
@@ -218,8 +229,8 @@ def show_release(ctx, release_id):
 @click.pass_context
 def show_deployments(ctx, release_id):
     project = ctx.obj['project']
-    aws_profile = ctx.obj['aws_profile']
-    releases_store = DynamoDbReleaseStore(project['id'], aws_profile)
+    role_arn = ctx.obj['role_arn']
+    releases_store = DynamoDbReleaseStore(project['id'], role_arn)
     if not release_id:
         releases = releases_store.get_recent_deployments()
     else:
@@ -234,8 +245,8 @@ def show_deployments(ctx, release_id):
 @click.pass_context
 def show_images(ctx, label):
     project = ctx.obj['project']
-    aws_profile = ctx.obj['aws_profile']
-    parameter_store = SsmParameterStore(project['id'], aws_profile)
+    role_arn = ctx.obj['role_arn']
+    parameter_store = SsmParameterStore(project['id'], role_arn)
 
     images = parameter_store.get_images(label=label)
 
@@ -259,8 +270,8 @@ def show_images(ctx, label):
 @click.argument('cluster_name', required=False)
 @click.pass_context
 def show_ecs(ctx, cluster_name):
-    aws_profile = ctx.obj['aws_profile']
-    ecs_metadata = EcsMetadata(aws_profile)
+    role_arn = ctx.obj['role_arn']
+    ecs_metadata = EcsMetadata(role_arn)
 
     if not cluster_name:
         cluster_names = ecs_metadata.get_cluster_names()
@@ -340,10 +351,10 @@ def show_github(ctx, commit_ref):
 @click.pass_context
 def verify_deployed(ctx, cluster_name, stage_label):
     project = ctx.obj['project']
-    aws_profile = ctx.obj['aws_profile']
+    role_arn = ctx.obj['role_arn']
 
-    ecs_metadata = EcsMetadata(aws_profile)
-    parameter_store = SsmParameterStore(project['id'], aws_profile)
+    ecs_metadata = EcsMetadata(role_arn)
+    parameter_store = SsmParameterStore(project['id'], role_arn)
 
     cluster_metadata = ecs_metadata.get_summary(
         cluster_name
