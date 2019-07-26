@@ -1,0 +1,18 @@
+input {
+  udp {
+    port => 514
+  }
+
+  heartbeat {}
+}
+
+output {
+  elasticsearch {
+    hosts    => "${ES_HOST}"
+    user     => "${ES_USER}"
+    password => "${ES_PASS}"
+    ssl      => true
+  }
+
+  stdout {}
+}
