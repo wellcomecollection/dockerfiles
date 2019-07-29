@@ -1,10 +1,12 @@
 input {
     udp {
+        type => "json"
         port => 514
         codec => json
     }
 
     tcp {
+        type => "json"
         port => 5142
         codec => json
     }
@@ -13,9 +15,11 @@ input {
 }
 
 filter {
-  json {
-    source => "message"
-  }
+    if [type] == "json" {
+        json {
+            source => "message"
+        }
+    }
 }
 
 output {
