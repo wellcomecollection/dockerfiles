@@ -1,18 +1,23 @@
 input {
-  udp {
-    port => 514
-  }
+    udp {
+        port => 514
+    }
 
-  heartbeat {}
+    tcp {
+        port => 5142
+        codec => json
+    }
+
+    heartbeat {}
 }
 
 output {
-  elasticsearch {
-    hosts    => "${ES_HOST}"
-    user     => "${ES_USER}"
-    password => "${ES_PASS}"
-    ssl      => true
-  }
+    elasticsearch {
+        hosts    => "${ES_HOST}"
+        user     => "${ES_USER}"
+        password => "${ES_PASS}"
+        ssl      => true
+    }
 
-  stdout {}
+    stdout {}
 }
