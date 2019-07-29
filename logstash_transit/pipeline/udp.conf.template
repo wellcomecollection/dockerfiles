@@ -12,6 +12,12 @@ input {
     heartbeat {}
 }
 
+filter {
+  json {
+    source => "message"
+  }
+}
+
 output {
     elasticsearch {
         hosts    => "${ES_HOST}"
