@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -o errexit
+
+echo
+echo "NAMESPACE: ${NAMESPACE:-"NAMESPACE not set!"}"
+echo "SERVICE_ID: ${SERVICE_ID:-"SERVICE_ID not set!"}"
+echo "TASK_ID: ${TASK_ID:-"TASK_ID not set!"}"
+echo "IMAGE_ID: ${IMAGE_ID:-"IMAGE_ID not set!"}"
+echo

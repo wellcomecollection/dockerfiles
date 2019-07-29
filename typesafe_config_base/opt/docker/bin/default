@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-METADATA=${LOCAL_METADATA:-"LOCAL_METADATA not set!"}
-
-echo $METADATA
