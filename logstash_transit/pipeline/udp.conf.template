@@ -1,0 +1,34 @@
+input {
+    udp {
+        type => "json"
+        port => 514
+        codec => json
+    }
+
+    tcp {
+        type => "json"
+        port => 5142
+        codec => json
+    }
+
+    heartbeat {}
+}
+
+filter {
+    if [type] == "json" {
+        json {
+            source => "message"
+        }
+    }
+}
+
+output {
+    elasticsearch {
+        hosts    => "${ES_HOST}"
+        user     => "${ES_USER}"
+        password => "${ES_PASS}"
+        ssl      => true
+    }
+
+    stdout {}
+}
