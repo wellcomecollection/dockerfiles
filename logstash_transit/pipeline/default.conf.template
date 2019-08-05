@@ -11,7 +11,11 @@ input {
         codec => json
     }
 
-    heartbeat {}
+    heartbeat {
+        add_field => { 
+            "namespace" => "${NAMESPACE}" 
+        }
+    }
 }
 
 filter {
