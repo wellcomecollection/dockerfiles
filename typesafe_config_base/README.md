@@ -1,6 +1,6 @@
 # wellcome/typesafe_config_base
 
-Base container image for typesafe services at Wellcome.
+Base container image for Scala apps using [Typesafe Config](https://github.com/lightbend/config).
 
 ## Usage
 
