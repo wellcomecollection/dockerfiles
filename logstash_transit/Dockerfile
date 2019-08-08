@@ -1,4 +1,4 @@
-FROM docker.elastic.co/logstash/logstash:7.2.0
+FROM docker.elastic.co/logstash/logstash:7.3.0
 
 LABEL maintainer "Robert Kenny <R.Kenny@wellcome.ac.uk>"
 LABEL description "A Docker image for deploying logstash"
