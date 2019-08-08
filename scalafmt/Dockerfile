@@ -1,21 +1,20 @@
-FROM pvansia/scala-sbt:0.13.13
+FROM wellcome/java11:dev
 
-LABEL maintainer "Alex Chan <a.chan@wellcome.ac.uk>"
-LABEL description "A Docker image for running Scalafmt"
+LABEL maintainer "Wellcome Collection <dev@wellcomecollection.org>"
+LABEL description "A Docker image for running scalafmt"
 
-RUN apk update && apk add curl
-
-# Installation instructions for scalafmt from
-# http://scalameta.org/scalafmt/#Coursier
-RUN curl --location --output coursier \
+RUN curl --location --output /tmp/coursier \
     https://github.com/alexarchambault/coursier/raw/master/coursier
 
-RUN chmod +x coursier
-RUN mv coursier /usr/local/bin
-RUN coursier bootstrap com.geirsson:scalafmt-cli_2.12:1.2.0 \
-  -o /usr/local/bin/scalafmt --standalone --main org.scalafmt.cli.Cli
+RUN chmod +x /tmp/coursier
+RUN mv /tmp/coursier /usr/local/bin
+RUN coursier bootstrap org.scalameta:scalafmt-cli_2.12:2.0.0 \
+      -r sonatype:snapshots \
+      -o /usr/local/bin/scalafmt --standalone --main org.scalafmt.cli.Cli
+
+RUN scalafmt --version
 
 VOLUME /repo
 WORKDIR /repo
 
-ENTRYPOINT ["sbt", ";scalafmt;test:scalafmt"]
+ENTRYPOINT ["/usr/local/bin/scalafmt"]

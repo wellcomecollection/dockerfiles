@@ -1,5 +1,8 @@
 FROM ruby:alpine
 
+LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
+LABEL description = "Fake SNS container"
+
 RUN apk update
 RUN apk upgrade
 RUN apk add git
