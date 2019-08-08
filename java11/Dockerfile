@@ -5,5 +5,5 @@ LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description = "A Docker image for running Java"
 
 RUN apt-get update
-RUN apt-get install -y vim docker python-pip jq
-RUN pip install docker-compose==1.23.0 awscli==1.16.213
+RUN apt-get install -y vim python-pip jq
+RUN pip install awscli==1.16.213

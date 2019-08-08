@@ -10,7 +10,7 @@ branches:
     - "master"
 
 script:
-  - "./run_travis.py"
+  - "./build.py"
 
 env:
   global:

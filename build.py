@@ -56,7 +56,7 @@ if __name__ == '__main__':
     # Images get tagged with their Travis build number -- which should be
     # a monotonically increasing sequence, so we can easily see which image
     # is "newest".
-    build_number = os.getenv("TRAVIS_BUILD_NUMBER", "dev")
+    build_number = os.getenv("TRAVIS_BUILD_NUMBER", "edge")
 
     results = {}
 
