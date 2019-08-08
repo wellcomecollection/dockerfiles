@@ -26,12 +26,12 @@ You will need:
 
 ## Running locally
 
-The build can be run locally by calling `./run_travis.py`.
+The build can be run locally by calling `./build.py`.
 
 You can also publish locally to an `image_name:dev` tag:
 
 ```
-PUBLISH=java11,build_tooling ./run_travis.py
+PUBLISH=java11,build_tooling ./build.py
 ```
 
-Will publish `wellcome/java11:dev` and `wellcome/build_tooling:dev`
+Will publish `wellcome/java11:dev` and `wellcome/build_tooling:dev`.
