@@ -17,7 +17,6 @@ import os
 import subprocess
 import sys
 
-
 ROOT = subprocess.check_output([
     "git", "rev-parse", "--show-toplevel"]).decode("utf8").strip()
 
@@ -41,15 +40,23 @@ def print_banner(action, name):
 
 
 if __name__ == '__main__':
-    if os.environ["TRAVIS_EVENT_TYPE"] == "push":
+    publish_in_dev = os.getenv("PUBLISH", "unset")
+
+    if os.getenv("TRAVIS_EVENT_TYPE", "unset") == "push":
         task = "publish"
+    elif publish_in_dev != "unset":
+        task = "local_publish"
+
+        local_publish = dict.fromkeys(
+            publish_in_dev.split(","), 1
+        )
     else:
         task = "build"
 
     # Images get tagged with their Travis build number -- which should be
     # a monotonically increasing sequence, so we can easily see which image
     # is "newest".
-    build_number = os.environ["TRAVIS_BUILD_NUMBER"]
+    build_number = os.getenv("TRAVIS_BUILD_NUMBER", "dev")
 
     results = {}
 
@@ -75,8 +82,9 @@ if __name__ == '__main__':
 
         try:
             subprocess.check_call(["docker", "build", "--tag", image_name, docker_dir])
+            do_local_publish = task == "local_publish" and local_publish.has_key(name)
 
-            if task == "publish":
+            if task == "publish" or do_local_publish:
                 subprocess.check_call(["docker", "push", image_name])
         except subprocess.CalledProcessError as err:
             print("ERROR: %r" % err)

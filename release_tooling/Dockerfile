@@ -1,6 +1,6 @@
 FROM alpine
 
-LABEL maintainer = "Wellcome Digital Platform team <wellcomedigitalplatform@wellcome.ac.uk>"
+LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description = "Python release tooling base image"
 
 RUN apk update && \

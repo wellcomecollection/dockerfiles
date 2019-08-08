@@ -1,6 +1,6 @@
 FROM wellcome/python3
 
-LABEL maintainer = "Wellcome Digital Platform team <wellcomedigitalplatform@wellcome.ac.uk>"
+LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description = "Python build tooling base image"
 
 RUN apk update && apk add git docker bash openssh openssl

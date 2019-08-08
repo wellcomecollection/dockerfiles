@@ -23,3 +23,15 @@ You will need:
 - [Docker](https://www.docker.com/)
 - [Make](https://www.gnu.org/software/make/manual/make.html)
 - [The internet](https://www.youtube.com/watch?v=iDbyYGrswtg)
+
+## Running locally
+
+The build can be run locally by calling `./run_travis.py`.
+
+You can also publish locally to an `image_name:dev` tag:
+
+```
+PUBLISH=java11,build_tooling ./run_travis.py
+```
+
+Will publish `wellcome/java11:dev` and `wellcome/build_tooling:dev`

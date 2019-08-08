@@ -1,9 +1,9 @@
-FROM openjdk:11
+FROM wellcome/java11:dev
+
+LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
+LABEL description = "A Docker image base for Typesafe Wellcome apps"
 
 RUN mkdir -p /opt/docker
-
-RUN apt-get update
-RUN apt-get -y install jq
 
 EXPOSE 8888
 

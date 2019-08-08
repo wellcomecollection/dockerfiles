@@ -1,12 +1,9 @@
-FROM openjdk:8-alpine
+FROM wellcome/java11:dev
 
-LABEL maintainer "Wellcome <wellcomedigitalplatform@wellcome.ac.uk>"
-LABEL description "A Docker image used for building sbt projects in the Wellcome Digital Platform"
+LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
+LABEL description "A Docker image for running SBT"
 
-RUN apk add --update bash curl docker py-pip
-RUN pip install docker-compose~=1.23.0
-
-ENV SBT_VERSION 0.13.17
+ENV SBT_VERSION 1.2.8
 ENV SBT_HOME /usr/local/sbt
 ENV PATH ${PATH}:${SBT_HOME}/bin
 
@@ -14,6 +11,8 @@ RUN curl -L "https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${
 
 VOLUME /repo
 WORKDIR /repo
+
+RUN /usr/local/sbt/bin/sbt sbtVersion
 
 # We're seeing scala builds hanging in Travis.
 # According to https://stackoverflow.com/questions/46475649/sbt-hangs-during-tests-on-travis-ci,

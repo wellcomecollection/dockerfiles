@@ -1,6 +1,6 @@
 FROM alpine
 
-LABEL maintainer = "Wellcome Digital Platform team <wellcomedigitalplatform@wellcome.ac.uk>"
+LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description = "Build a Docker image for testing Python"
 
 RUN apk add --update docker python

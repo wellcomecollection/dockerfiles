@@ -1,6 +1,6 @@
 FROM alpine
 
-LABEL maintainer "Alex Chan <a.chan@wellcome.ac.uk>"
+LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description "A Docker image for deploying our Docker images to AWS"
 
 RUN apk update && \
