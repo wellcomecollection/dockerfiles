@@ -1,4 +1,4 @@
-FROM wellcome/java11:dev
+FROM wellcome/java11:edge
 
 LABEL maintainer "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description "A Docker image for running scalafmt"

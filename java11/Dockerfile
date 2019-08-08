@@ -7,5 +7,3 @@ LABEL description = "A Docker image for running Java"
 RUN apt-get update
 RUN apt-get install -y vim python-pip jq
 RUN pip install awscli==1.16.213
-
-docker-compose==1.23.0

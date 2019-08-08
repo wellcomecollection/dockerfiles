@@ -1,4 +1,4 @@
-FROM wellcome/java11:dev
+FROM wellcome/java11:edge
 
 LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description "A Docker image for running SBT"
@@ -14,7 +14,7 @@ RUN apt-get install -y \
         gnupg2 \
         software-properties-common
 
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 
 RUN add-apt-repository \
        "deb [arch=amd64] https://download.docker.com/linux/debian \
@@ -22,7 +22,7 @@ RUN add-apt-repository \
        stable"
 
 RUN apt-get update
-RUN apt-get install docker-ce docker-ce-cli containerd.io
+RUN apt-get install -y docker-ce docker-ce-cli containerd.io
 
 RUN pip install docker-compose==1.23.0
 
