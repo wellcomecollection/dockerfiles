@@ -30,8 +30,15 @@ def main(ctx, project_file, verbose, dry_run, role_arn):
     try:
         projects = project_config.load(project_file)
     except FileNotFoundError:
-        message = f"Couldn't find project metadata file {project_file!r}.  Run `initialise`."
-        raise click.UsageError(message) from None
+        if ctx.invoked_subcommand != "initialise":
+            message = f"Couldn't find project metadata file {project_file!r}.  Run `initialise`."
+            raise click.UsageError(message) from None
+        ctx.obj = {
+            'project_filepath': project_file,
+            'verbose': verbose,
+            'dry_run': dry_run,
+        }
+        return
 
     project_names = list(projects.keys())
     project_count = len(project_names)
@@ -161,6 +168,7 @@ def deploy(ctx, environment_id, release_id, description):
         parameter_store.put_services_to_images(environment_id, release['images'])
     elif verbose:
         click.echo("dry-run, not created.")
+
 
 @main.command()
 @click.argument('from_label', required=False)
@@ -345,6 +353,7 @@ def show_github(ctx, commit_ref):
             click.echo("{:>8} Closed at {}".format('',summary['closed_at']))
             click.echo("{:>8} {}".format('',summary['url']))
 
+
 @main.command()
 @click.argument('cluster_name', required=True)
 @click.argument('stage_label', required=True)
@@ -400,7 +409,6 @@ def verify_deployed(ctx, cluster_name, stage_label):
 
 
 
-
 def _format_ecr_uri(uri):
     image_name = uri.split("/")[2]
     image_label, image_tag = image_name.split(":")
@@ -418,7 +426,6 @@ def _summarise_ssm_response(images):
                 'value': image['Value'],
                 'last_modified': image['LastModifiedDate'].strftime('%d-%m-%YT%H:%M')
         }
-
 
 
 def _summarise_release_deployments(releases):

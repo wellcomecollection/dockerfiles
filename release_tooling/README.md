@@ -1,8 +1,8 @@
 # wellcome/release_tooling
 
-A base container for release tooling, see [RFC-013](https://github.com/wellcometrust/platform/tree/master/docs/rfcs/013-release_deployment_tracking)
+A base container for release tooling, see [RFC-013](https://github.com/wellcomecollection/docs/tree/master/rfcs/013-release_deployment_tracking)
 
-	
+
 ~~~~
   Usage: release.py [OPTIONS] COMMAND [ARGS]...
 
