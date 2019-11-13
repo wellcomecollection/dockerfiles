@@ -25,8 +25,9 @@ DEFAULT_PROJECT_FILEPATH = ".wellcome_project"
 @click.option('--verbose', '-v', is_flag=True, help="Print verbose messages.")
 @click.option('--dry-run', '-d', is_flag=True, help="Don't make changes.")
 @click.option("--role-arn")
+@click.option("--project-id", '-i', help="Specify the project ID")
 @click.pass_context
-def main(ctx, project_file, verbose, dry_run, role_arn):
+def main(ctx, project_file, verbose, dry_run, role_arn, project_id):
     try:
         projects = project_config.load(project_file)
     except FileNotFoundError:
@@ -43,13 +44,14 @@ def main(ctx, project_file, verbose, dry_run, role_arn):
     project_names = list(projects.keys())
     project_count = len(project_names)
 
-    if project_count == 1:
-        project_id = project_names[0]
-    else:
-        project_id = click.prompt(
-            text="Enter the project ID", 
-            type=click.Choice(project_names)
-        )
+    if not project_id:
+        if project_count == 1:
+            project_id = project_names[0]
+        else:
+            project_id = click.prompt(
+                text="Enter the project ID",
+                type=click.Choice(project_names)
+            )
 
     project = projects.get(project_id)
     project['id'] = project_id
