@@ -130,7 +130,7 @@ def deploy(ctx, environment_id, release_id, description):
 
     releases_store = DynamoDbReleaseStore(project['id'], role_arn)
     parameter_store = SsmParameterStore(project['id'], role_arn)
-    user_details = IamUserDetails(project['id'], role_arn)
+    user_details = IamUserDetails(role_arn)
 
     environments = project_config.get_environments_lookup(project)
 
@@ -186,7 +186,7 @@ def prepare(ctx, from_label, release_service, service_label, release_description
 
     releases_store = DynamoDbReleaseStore(project['id'], role_arn)
     parameter_store = SsmParameterStore(project['id'], role_arn)
-    user_details = IamUserDetails(project['id'], role_arn)
+    user_details = IamUserDetails(role_arn)
 
     if not from_label:
         from_label = 'latest'

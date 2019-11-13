@@ -2,13 +2,11 @@ import boto3
 
 
 class IamUserDetails:
-    def __init__(self, project_id, role_arn=None):
-        self.project_id = project_id
-
+    def __init__(self, role_arn=None):
         if role_arn:
-            client = boto3.client('sts')
+            self.client = boto3.client('sts')
 
-            response = client.assume_role(
+            response = self.client.assume_role(
                 RoleArn=role_arn,
                 RoleSessionName="ReleaseToolIamUserDetails"
             )
@@ -25,13 +23,17 @@ class IamUserDetails:
 
     def current_user(self):
         try:
-            user = self.iam.CurrentUser()
-            return {
-                "id": user.arn,
-                "name": user.user_name
-            }
+            if self.client:
+                user_id = self.client.get_caller_identity()['Arn']
+                user_name = user_id.split('/')[-1]
+            else:
+                iam_user = self.iam.CurrentUser()
+                user_id = iam_user.arn
+                user_name = iam_user.user_name
         except Exception as e:
-            return {
-                "id": "unknown",
-                "name": "unknown"
-            }
+            user_id = "unknown"
+            user_name = "unknown"
+        return {
+            "id": user_id,
+            "name": user_name
+        }
