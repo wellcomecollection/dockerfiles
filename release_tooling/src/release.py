@@ -9,11 +9,9 @@ import model
 import project_config
 from pprint import pprint
 
-from github_metadata import GitHubMetadata
-from ecs_metadata import EcsMetadata
 from releases_store import DynamoDbReleaseStore
 from parameter_store import SsmParameterStore
-from pretty_printing import pprint_path_keyval_dict, pprint_nested_tree
+from pretty_printing import pprint_path_keyval_dict
 from user_details import IamUserDetails
 from dateutil.parser import parse
 from urllib.parse import urlparse
@@ -26,8 +24,8 @@ DEFAULT_PROJECT_FILEPATH = ".wellcome_project"
 @click.option('--project-file', '-f', default=DEFAULT_PROJECT_FILEPATH)
 @click.option('--verbose', '-v', is_flag=True, help="Print verbose messages.")
 @click.option('--dry-run', '-d', is_flag=True, help="Don't make changes.")
-@click.option("--role-arn")
 @click.option("--project-id", '-i', help="Specify the project ID")
+@click.option("--role-arn")
 @click.pass_context
 def main(ctx, project_file, verbose, dry_run, role_arn, project_id):
     try:
@@ -78,10 +76,12 @@ def main(ctx, project_file, verbose, dry_run, role_arn, project_id):
 
 
 @main.command()
-@click.option('--project-id', '-i', prompt="Enter an id for this project")
-@click.option('--project-name', '-n', prompt="Enter a descriptive name for this project")
-@click.option('--environment-id', '-e', prompt="Enter an id for an environment")
-@click.option('--environment-name', '-a', prompt="Enter a descriptive name for this environment")
+@click.option('--project-id', '-i', prompt="Enter an id for this project", help="The project ID")
+@click.option('--project-name', '-n', prompt="Enter a descriptive name for this project",
+              help="The name of the project")
+@click.option('--environment-id', '-e', prompt="Enter an id for an environment", help="The primary environment's ID")
+@click.option('--environment-name', '-a', prompt="Enter a descriptive name for this environment",
+              help="The primary environment's name")
 @click.pass_context
 def initialise(ctx, project_id, project_name, environment_id, environment_name):
     project_filepath = ctx.obj['project_filepath']
@@ -121,9 +121,12 @@ def initialise(ctx, project_id, project_name, environment_id, environment_name):
 
 
 @main.command()
-@click.option('--release-id', prompt="Release ID to deploy", default="latest")
-@click.option('--environment-id', prompt="Environment ID to deploy release to")
-@click.option('--description', prompt="Enter a description for this deployment")
+@click.option('--release-id', prompt="Release ID to deploy", default="latest", show_default=True,
+              help="The ID of the release to be deployed, or the latest release if unspecified")
+@click.option('--environment-id', prompt="Environment ID to deploy release to",
+              help="The target environment of this deployment")
+@click.option('--description', prompt="Enter a description for this deployment",
+              help="A description of this deployment")
 @click.pass_context
 def deploy(ctx, release_id, environment_id, description):
     project = ctx.obj['project']
@@ -173,12 +176,13 @@ def deploy(ctx, release_id, environment_id, description):
 
 
 @main.command()
-@click.option('--service', prompt="Service to release")
-@click.option('--from-label', prompt="Label to base release upon", default="latest")
-@click.option('--service-source', help="Label or image URI to release for specified service", required=False)
+@click.option('--from-label', prompt="Label to base release upon",
+              help="The existing label upon which this release will be based", default="latest", show_default=True)
+@click.option('--service', prompt="Service to update", default="all", show_default=True,
+              help="The service to update with a (prompted for) new image")
 @click.option('--release-description', prompt="Description for this release")
 @click.pass_context
-def prepare(ctx, service, from_label, service_source, release_description):
+def prepare(ctx, from_label, service, release_description):
     project = ctx.obj['project']
     role_arn = ctx.obj['role_arn']
     dry_run = ctx.obj['dry_run']
@@ -188,12 +192,15 @@ def prepare(ctx, service, from_label, service_source, release_description):
     user_details = IamUserDetails(role_arn)
 
     from_images = parameter_store.get_services_to_images(from_label)
-    if not service_source:
+    service_source = "latest"
+    if service == "all":
         release_image = {}
-    elif _is_url(service_source):
-        release_image = {service: service_source}
     else:
-        release_image = parameter_store.get_service_to_image(service_source, service)
+        service_source = click.prompt("Label or image URI to release for specified service", default="latest")
+        if _is_url(service_source):
+            release_image = {service: service_source}
+        else:
+            release_image = parameter_store.get_service_to_image(service_source, service)
     release_images = {**from_images, **release_image}
 
     if not release_images:
@@ -206,7 +213,7 @@ def prepare(ctx, service, from_label, service_source, release_description):
         release_description,
         release_images)
 
-    if not service:
+    if service == "all":
         click.echo(f"Prepared release from images in {from_label}")
     else:
         click.echo(f"Prepared release from images in {from_label} with {service} from {service_source}")
@@ -274,141 +281,6 @@ def show_images(ctx, label):
     click.echo("\n".join(pprint_path_keyval_dict(paths)))
 
 
-@main.command()
-@click.argument('cluster_name', required=False)
-@click.pass_context
-def show_ecs(ctx, cluster_name):
-    role_arn = ctx.obj['role_arn']
-    ecs_metadata = EcsMetadata(role_arn)
-
-    if not cluster_name:
-        cluster_names = ecs_metadata.get_cluster_names()
-
-        cluster_summaries = [ecs_metadata.get_summary(
-            cluster_name
-        ) for cluster_name in cluster_names]
-
-        zipped_summaries = list(zip(
-            cluster_names,
-            cluster_summaries)
-        )
-
-        summaries =[{
-            'cluster_name': summary[0],
-            'cluster_summary': summary[1]
-        } for summary in zipped_summaries]
-    else:
-        cluster_summary = {
-            ecs_metadata.get_summary(cluster_name)
-        }
-
-        summaries = [{
-            'cluster_name': cluster_name,
-            'cluster_summary': cluster_summary
-        }]
-
-    paths = {}
-    for summary in summaries:
-
-        subpaths = {}
-        ecs_summary = {}
-        for service_name in summary['cluster_summary']:
-            service = summary['cluster_summary'][service_name]
-
-            ecr_uri = _format_ecr_uri(service['images'])
-
-            ecs_summary['task_version'] = service['task_definition']['revision']
-            ecs_summary['image_label'] = ecr_uri['label'] + ":" + ecr_uri['tag']
-            ecs_summary['service_name'] = service['service']['service_name']
-            ecs_summary['deployed_at'] = next(iter(service['deployments']))
-
-            summary_text = "{deployed_at:>30}{image_label:>30}".format(
-                **ecs_summary
-            )
-
-            subpaths[service_name] = summary_text
-
-        paths[summary['cluster_name']] = subpaths
-
-    click.echo("\n".join(pprint_path_keyval_dict(paths)))
-
-
-@main.command()
-@click.argument('commit_ref', required=True)
-@click.pass_context
-def show_github(ctx, commit_ref):
-    github_repository = ctx.obj['github_repository']
-    github_metadata = GitHubMetadata(github_repository)
-
-    summaries = github_metadata.find_pull_requests(
-        commit_ref
-    )
-
-    click.echo('')
-    if not summaries:
-        click.echo("No matching pull requests found.")
-    else:
-        for summary in summaries:
-            click.echo("{ref:>8} \x1b[1;32m{title}\x1b[0m".format(**summary))
-            click.echo("{:>8} Closed at {}".format('',summary['closed_at']))
-            click.echo("{:>8} {}".format('',summary['url']))
-
-
-@main.command()
-@click.argument('cluster_name', required=True)
-@click.argument('stage_label', required=True)
-@click.pass_context
-def verify_deployed(ctx, cluster_name, stage_label):
-    project = ctx.obj['project']
-    role_arn = ctx.obj['role_arn']
-
-    ecs_metadata = EcsMetadata(role_arn)
-    parameter_store = SsmParameterStore(project['id'], role_arn)
-
-    cluster_metadata = ecs_metadata.get_summary(
-        cluster_name
-    )
-
-    ssm_parameters = parameter_store.get_images(label=stage_label)
-
-    cluster_images =  [cluster_metadata[service]['images'] for service in cluster_metadata]
-    ssm_images = [parameter['Value'] for parameter in ssm_parameters]
-
-    cluster_set = frozenset(cluster_images)
-    ssm_set = frozenset(ssm_images)
-
-    if(cluster_set.issubset(ssm_set)):
-        click.echo("\nStage is OK\n")
-    else:
-        click.echo(f"\nStage is out of sync!\n")
-        diff_images = list(cluster_set.difference(ssm_set))
-
-        ssm_images_formatted = [_format_ecr_uri(uri) for uri in ssm_images]
-        cluster_images_formatted = [_format_ecr_uri(uri) for uri in cluster_images]
-        diff_images_formatted = [_format_ecr_uri(uri) for uri in diff_images]
-
-        ssm_paths = {}
-        for ssm_image in ssm_images_formatted:
-            ssm_paths[ssm_image['label']] = ssm_image['tag']
-
-        cluster_paths = {}
-        for cluster_image in cluster_images_formatted:
-            cluster_paths[cluster_image['label']] = cluster_image['tag']
-
-        diff_paths = {}
-        for diff_image in diff_images_formatted:
-            diff_paths[diff_image['label']] = diff_image['tag']
-
-        paths = {
-            f"Stage: {stage_label}": ssm_paths,
-            f"Cluster: {cluster_name}": cluster_paths,
-            "!!! NOT DEPLOYED !!!": diff_paths
-        }
-
-        click.echo("\n".join(pprint_path_keyval_dict(paths)))
-
-
-
 def _format_ecr_uri(uri):
     image_name = uri.split("/")[2]
     image_label, image_tag = image_name.split(":")
@@ -422,9 +294,9 @@ def _format_ecr_uri(uri):
 def _summarise_ssm_response(images):
     for image in images:
         yield {
-                'name': image['Name'],
-                'value': image['Value'],
-                'last_modified': image['LastModifiedDate'].strftime('%d-%m-%YT%H:%M')
+            'name': image['Name'],
+            'value': image['Value'],
+            'last_modified': image['LastModifiedDate'].strftime('%d-%m-%YT%H:%M')
         }
 
 
