@@ -16,6 +16,7 @@ from parameter_store import SsmParameterStore
 from pretty_printing import pprint_path_keyval_dict, pprint_nested_tree
 from user_details import IamUserDetails
 from dateutil.parser import parse
+from urllib.parse import urlparse
 
 DEFAULT_PROJECT_FILEPATH = ".wellcome_project"
 
@@ -173,12 +174,12 @@ def deploy(ctx, environment_id, release_id, description):
 
 
 @main.command()
-@click.argument('from_label', required=False)
-@click.argument('release_service', required=False)
-@click.argument('service_label', required=False)
-@click.option('--release-description', prompt="Enter a description for this release")
+@click.option('--service', prompt="Service to release")
+@click.option('--from-label', prompt="Label to base release upon", default="latest")
+@click.option('--service-source', help="Label or image URI to release for specified service", required=False)
+@click.option('--release-description', prompt="Description for this release")
 @click.pass_context
-def prepare(ctx, from_label, release_service, service_label, release_description):
+def prepare(ctx, service, from_label, service_source, release_description):
     project = ctx.obj['project']
     role_arn = ctx.obj['role_arn']
     verbose = ctx.obj['verbose']
@@ -188,17 +189,17 @@ def prepare(ctx, from_label, release_service, service_label, release_description
     parameter_store = SsmParameterStore(project['id'], role_arn)
     user_details = IamUserDetails(role_arn)
 
-    if not from_label:
-        from_label = 'latest'
-        release_images = parameter_store.get_services_to_images(from_label)
-    elif not service_label:
-        raise click.UsageError("service_label is required")
+    from_images = parameter_store.get_services_to_images(from_label)
+    if not service_source:
+        release_image = {}
+    elif _is_url(service_source):
+        release_image = {service: service_source}
     else:
-        from_images = parameter_store.get_services_to_images(from_label)
-        release_image = parameter_store.get_service_to_image(service_label, release_service)
-        release_images = {**from_images, **release_image}
+        release_image = parameter_store.get_service_to_image(service_source, service)
+    release_images = {**from_images, **release_image}
+
     if not release_images:
-        raise click.UsageError(f"No images found for {project['id']} {service_label} {release_service}")
+        raise click.UsageError(f"No images found for {project['id']} {service} {from_label}")
 
     release = model.create_release(
         project['id'],
@@ -207,12 +208,11 @@ def prepare(ctx, from_label, release_service, service_label, release_description
         release_description,
         release_images)
 
-    if verbose:
-        if not release_service:
-            click.echo(f"Prepared release from images in {from_label}")
-        else:
-            click.echo(f"Prepared release from images in {from_label} with {release_service} from {service_label}")
-        click.echo(pprint(release))
+    if not service:
+        click.echo(f"Prepared release from images in {from_label}")
+    else:
+        click.echo(f"Prepared release from images in {from_label} with {service} from {service_source}")
+    click.echo(pprint(release))
 
     if not dry_run:
         releases_store.put_release(release)
@@ -443,6 +443,14 @@ def _summarise_release_deployments(releases):
                 }
             )
     return summaries
+
+
+def _is_url(label):
+    try:
+        res = urlparse(label)
+        return all([res.scheme, res.netloc])
+    except ValueError:
+        return False
 
 
 if __name__ == "__main__":
