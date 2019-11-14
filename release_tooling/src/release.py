@@ -17,6 +17,7 @@ from pretty_printing import pprint_path_keyval_dict, pprint_nested_tree
 from user_details import IamUserDetails
 from dateutil.parser import parse
 from urllib.parse import urlparse
+from python_terraform import Terraform
 
 DEFAULT_PROJECT_FILEPATH = ".wellcome_project"
 
@@ -69,6 +70,7 @@ def main(ctx, project_file, verbose, dry_run, role_arn, project_id):
         'project_filepath': project_file,
         'role_arn': project.get('role_arn'),
         'github_repository': project.get('github_repository'),
+        'tf_stack_root': project.get('tf_stack_root'),
         'verbose': verbose,
         'dry_run': dry_run,
         'project': project
@@ -119,14 +121,13 @@ def initialise(ctx, project_id, project_name, environment_id, environment_name):
 
 
 @main.command()
-@click.argument('environment_id', required=False)
-@click.argument('release_id', required=False)
-@click.option('--description', '-d', help="Enter a description for this deployment")
+@click.option('--release-id', prompt="Release ID to deploy", default="latest")
+@click.option('--environment-id', prompt="Environment ID to deploy release to")
+@click.option('--description', prompt="Enter a description for this deployment")
 @click.pass_context
-def deploy(ctx, environment_id, release_id, description):
+def deploy(ctx, release_id, environment_id, description):
     project = ctx.obj['project']
     role_arn = ctx.obj['role_arn']
-    verbose = ctx.obj['verbose']
     dry_run = ctx.obj['dry_run']
 
     releases_store = DynamoDbReleaseStore(project['id'], role_arn)
@@ -135,42 +136,40 @@ def deploy(ctx, environment_id, release_id, description):
 
     environments = project_config.get_environments_lookup(project)
 
-    if not environment_id and len(environments) == 1:
-        environment_id = list(environments.values())[0]['id']
-        if verbose:
-            click.echo(f"Using environment '{environment_id}'")
-    if not environment_id:
-        environment_id = click.prompt(text="Enter the environment id", type=click.Choice(environments.keys()))
-
     try:
         environment = environments[environment_id]
     except KeyError:
         raise ValueError(f"Unknown environment. Expected '{environment_id}' in {environments}")
 
-    if not release_id:
+    if release_id == "latest":
         release = releases_store.get_latest_release()
     else:
         release = releases_store.get_release(release_id)
 
+    click.echo(click.style("Release to deploy:", fg="blue"))
     click.echo(pprint(release))
-    click.confirm("release?", abort=True)
-
-    # ask for description after establishing environment_id
-    if not description:
-        description = click.prompt("Enter a description for this deployment")
+    click.confirm(click.style("create deployment?", fg="green", bold=True), abort=True)
 
     user = user_details.current_user()
-
     deployment = model.create_deployment(environment, user, description)
 
-    if verbose:
-        click.echo(pprint(deployment))
+    click.echo(click.style("Created deployment:", fg="blue"))
+    click.echo(pprint(deployment))
 
     if not dry_run:
         releases_store.add_deployment(release['release_id'], deployment)
         parameter_store.put_services_to_images(environment_id, release['images'])
-    elif verbose:
+    else:
         click.echo("dry-run, not created.")
+        return
+
+    apply_to_stack = click.confirm(click.style("apply deployment to stack?", fg="green", bold=True))
+    if not apply_to_stack or not project['tf_stack_root']:
+        click.echo(click.style("A deployment record was created but was not applied to infra", fg="red", bold=True))
+        return
+
+    tf = Terraform(working_dir=project['tf_stack_root'])
+    tf.apply(no_color=None, capture_output=False)
 
 
 @main.command()
@@ -182,7 +181,6 @@ def deploy(ctx, environment_id, release_id, description):
 def prepare(ctx, service, from_label, service_source, release_description):
     project = ctx.obj['project']
     role_arn = ctx.obj['role_arn']
-    verbose = ctx.obj['verbose']
     dry_run = ctx.obj['dry_run']
 
     releases_store = DynamoDbReleaseStore(project['id'], role_arn)
@@ -216,7 +214,7 @@ def prepare(ctx, service, from_label, service_source, release_description):
 
     if not dry_run:
         releases_store.put_release(release)
-    elif verbose:
+    else:
         click.echo("dry-run, not created.")
 
 
