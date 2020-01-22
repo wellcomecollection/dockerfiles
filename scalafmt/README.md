@@ -2,7 +2,7 @@
 
 Runs `scalafmt` over your code.
 
-##Usage
+## Usage
 
 ```
 docker run wellcome/scalafmt:latest \
