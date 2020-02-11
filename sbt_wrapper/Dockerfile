@@ -1,4 +1,4 @@
-FROM wellcome/java11:edge
+FROM wellcome/java11:121
 
 LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description "A Docker image for running SBT"
