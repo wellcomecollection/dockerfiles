@@ -2,7 +2,7 @@
 
 This container image is intended to work with the services module.
 
-See: https://github.com/wellcometrust/terraform/tree/master/services
+See: https://github.com/wellcomecollection/terraform/tree/master/services
 
 By default this container redirects HTTPS -> HTTP.
 
