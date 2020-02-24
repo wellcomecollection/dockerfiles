@@ -6,13 +6,13 @@ A repository for dockerfiles created at the Wellcome Trust
 
 The container images here are built at https://hub.docker.com/u/wellcome
 
-[![Build Status](https://travis-ci.org/wellcometrust/dockerfiles.svg?branch=master)](https://travis-ci.org/wellcometrust/dockerfiles)
+[![Build Status](https://travis-ci.org/wellcomecollection/dockerfiles.svg?branch=master)](https://travis-ci.org/wellcomecollection/dockerfiles)
 
 ## Why bother?
 
-Many of the containers published here are used to provide build and testing tasks elsewhere. Containerising these tasks means they are reproducible _anywhere_ as easily in CI as locally. 
+Many of the containers published here are used to provide build and testing tasks elsewhere. Containerising these tasks means they are reproducible _anywhere_ as easily in CI as locally.
 
-The intention is to reduce the dependencies required in order to reproduce a build or run tests. If you want to contribute to a repo as an open source developer or if you are a new dev in a team setting up your laptop the fewer dependencies the better. 
+The intention is to reduce the dependencies required in order to reproduce a build or run tests. If you want to contribute to a repo as an open source developer or if you are a new dev in a team setting up your laptop the fewer dependencies the better.
 
 This approach heavily relies on docker to encapsulate and stabilise environments used to run build and test tasks against your code.
 

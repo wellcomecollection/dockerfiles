@@ -36,21 +36,20 @@ class SsmParameterStore:
             Recursive=True
         )
 
-
     def _get_parameter(self, path):
         response = self.ssm.get_parameter(Name=path)
         if response['ResponseMetadata']['HTTPStatusCode'] != 200:
-            raise ValueError(f"SSM get parameter failed {response['ResponseMetadata']}")
+            raise ValueError(
+                f"SSM get parameter failed {response['ResponseMetadata']}")
         return response['Parameter']
 
-
     def get_services_to_images(self, label):
-        ssm_parameters = {d["Name"]: d["Value"] for d in self.get_images(label)}
+        ssm_parameters = {d["Name"]: d["Value"]
+                          for d in self.get_images(label)}
 
         return {
             self._image_to_service_name(key): value for key, value in ssm_parameters.items()
         }
-
 
     def get_service_to_image(self, label, service):
         image_path = self.create_ssm_key(label, service)
@@ -58,19 +57,17 @@ class SsmParameterStore:
 
         return {self._image_to_service_name(parameter["Parameter"]["Name"]): parameter["Parameter"]["Value"]}
 
-
     def _image_to_service_name(self, image):
         return image.rsplit("/")[-1]
-
 
     def put_services_to_images(self, label, services_to_images):
         for service, image in services_to_images.items():
             ssm_key = self.create_ssm_key(label, service)
-            self.ssm.put_parameter(Name=ssm_key, Value=image, Type='String', Overwrite=True)
-
+            self.ssm.put_parameter(
+                Name=ssm_key, Value=image, Type='String', Overwrite=True)
 
     def create_ssm_key(self, label=None, service=None):
-        # https://github.com/wellcometrust/platform/tree/master/docs/rfcs/013-release_deployment_tracking#build-artefacts-ssm-parameters
+        # https://github.com/wellcomecollection/platform/tree/master/docs/rfcs/013-release_deployment_tracking#build-artefacts-ssm-parameters
         # Keys are referenced with the following paths:
         #   /{project_id}/images/{label}/{service_id}
         ssm_key_parts = filter(
@@ -79,8 +76,10 @@ class SsmParameterStore:
         ssm_key = "/".join(ssm_key_parts)
         return ssm_key
 
+
 def parse_ssm_key(ssm_key):
     _, project_id, images_token, label, service = ssm_key.split("/")
     if images_token != 'images':
-        raise ValueError(f"'images' token expected in 2nd position in {ssm_key}")
+        raise ValueError(
+            f"'images' token expected in 2nd position in {ssm_key}")
     return project_id, label, service
