@@ -4,16 +4,16 @@
 Build a deployment ZIP for a Lambda, and upload it to Amazon S3.
 
 Usage:
-  publish_lambda_zip.py <PATH> --bucket=<BUCKET> --key=<KEY> [--sns-topic=<topic_arn>]
+  publish_lambda_zip.py <PATH> --bucket=<BUCKET> --key=<KEY> --role-arn=<ROLE_ARN> [--sns-topic=<topic_arn>]
   publish_lambda_zip.py -h | --help
 
 Options:
   <PATH>                Path to the source code for the Lambda
   --bucket=<BUCKET>     Name of the Amazon S3 bucket
   --key=<KEY>           Key for the upload ZIP file
+  --role-arn=<ROLE_ARN> Role ARN
   --sns-topic=<topic_arn>  If supplied, send a message about the push to this
                            SNS topic.
-
 """
 
 import os
@@ -23,6 +23,7 @@ import tempfile
 import zipfile
 
 import boto3
+import click
 from botocore.exceptions import ClientError
 import docopt
 
@@ -81,6 +82,9 @@ def build_lambda_local(path, name):
             # Hidden files
             '.',
 
+            # Virtualenv
+            'venv',
+
             # Required for installation, not for our prod Lambdas
             'requirements.in',
             'requirements.txt',
@@ -119,6 +123,22 @@ def build_lambda_local(path, name):
     return dst
 
 
+def get_aws_credentials(role_arn):
+    sts = boto3.client("sts")
+    role = sts.assume_role(
+        RoleArn=role_arn, RoleSessionName="AssumeRoleSession1"
+    )
+    return role["Credentials"]
+
+
+def get_aws_client(name, credentials):
+    return boto3.client(
+        name,
+        aws_access_key_id=credentials["AccessKeyId"],
+        aws_secret_access_key=credentials["SecretAccessKey"],
+        aws_session_token=credentials["SessionToken"],
+    )
+
 def upload_to_s3(client, filename, bucket, key):
     print(f'*** Uploading {filename} to S3')
 
@@ -155,27 +175,32 @@ if __name__ == '__main__':
     bucket = args['--bucket']
 
     topic_arn = args['--sns-topic']
+    role_arn = args['--role-arn']
+    print(role_arn)
 
-    client = boto3.client('s3')
+    credentials = get_aws_credentials(role_arn)
+    client = get_aws_client('s3', credentials)
     name = os.path.basename(key)
     filename = build_lambda_local(path=path, name=name)
 
     upload_to_s3(client=client, filename=filename, bucket=bucket, key=key)
 
-    if topic_arn is not None:
-        import json
+    # TODO: the following is broken so comment out for now:
+    # AccessDenied when calling the GetUser: User: (...) is not authorized to perform: iam:GetUser on resource: user (...)
 
-        sns_client = boto3.client('sns')
+    # if topic_arn is not None:
+    #     import json
 
-        get_user_output = cmd('aws', 'iam', 'get-user')
-        iam_user = json.loads(get_user_output)['User']['UserName']
+    #     sns_client = get_aws_client('sns', credentials)
+    #     get_user_output = cmd('aws', 'iam', 'get-user')
+    #     iam_user = json.loads(get_user_output)['User']['UserName']
 
-        message = {
-            'commit_id': git('rev-parse', '--abbrev-ref', 'HEAD'),
-            'commit_msg': git('log', '-1', '--oneline', '--pretty=%B'),
-            'git_branch': git('rev-parse', '--abbrev-ref', 'HEAD'),
-            'iam_user': iam_user,
-            'project': name,
-            'push_type': 'aws_lambda',
-        }
-        sns_client.publish(TopicArn=topic_arn, Message=json.dumps(message))
+    #     message = {
+    #         'commit_id': git('rev-parse', '--abbrev-ref', 'HEAD'),
+    #         'commit_msg': git('log', '-1', '--oneline', '--pretty=%B'),
+    #         'git_branch': git('rev-parse', '--abbrev-ref', 'HEAD'),
+    #         'iam_user': iam_user,
+    #         'project': name,
+    #         'push_type': 'aws_lambda',
+    #     }
+    #     sns_client.publish(TopicArn=topic_arn, Message=json.dumps(message))
