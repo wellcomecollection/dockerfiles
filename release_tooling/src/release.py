@@ -3,11 +3,15 @@
 """
   Release tool
 """
-import click
+import functools
 import json
 import model
 import project_config
 from pprint import pprint
+import subprocess
+
+import click
+import termcolor
 
 from releases_store import DynamoDbReleaseStore
 from parameter_store import SsmParameterStore
@@ -120,6 +124,23 @@ def initialise(ctx, project_id, project_name, environment_id, environment_name):
         click.echo("dry-run, not created.")
 
 
+@functools.lru_cache()
+def get_commit_summary(commit_id):
+    try:
+        git_log_output = subprocess.check_output(
+            ["git", "show", "-s", "--format=%B", commit_id],
+
+            # Sending stderr to /dev/null makes debugging harder, but since the
+            # Git commit message is just a convenience, we don't want the Git
+            # output leaking into the release tool.
+            stderr=subprocess.DEVNULL
+        )
+    except subprocess.CalledProcessError:
+        return None
+    else:
+        return git_log_output.decode("utf8").splitlines()[0].strip()
+
+
 @main.command()
 @click.option('--release-id', prompt="Release ID to deploy", default="latest", show_default=True,
               help="The ID of the release to be deployed, or the latest release if unspecified")
@@ -150,7 +171,58 @@ def deploy(ctx, release_id, environment_id, description):
         release = releases_store.get_release(release_id)
 
     click.echo(click.style("Release to deploy:", fg="blue"))
-    click.echo(pprint(release))
+    print(f"project ID:   {release['project_id']}")
+    print(f"project name: {release['project_name']}")
+    print(f"description:  {release['description']}")
+    print(f"date created: {release['date_created']}")
+    print(f"release ID:   {release['release_id']}")
+
+    # Print a pretty representation of all the images and any changes, e.g.
+    #
+    #       api         1234 -> 5678 (API updated for WidgetComponent)
+    #       bagger      1234         (unchanged)
+    #       compostor           5678 (new app)
+    #
+    existing_images = parameter_store.get_services_to_images(label=environment_id)
+
+    longest_service_name = max(len(name) for name in release["images"])
+    padding_length = longest_service_name + 1
+
+    new_image_lines = []
+
+    for service_name, image_id in release["images"].items():
+        _, old_commit_id = existing_images.get(service_name, "").split(":", 1)
+        _, new_commit_id = image_id.split(":", 1)
+
+        # Only display a short version of the Git commit, for readability
+        old_commit_id = old_commit_id[:7]
+        new_commit_id = new_commit_id[:7]
+
+        if old_commit_id == new_commit_id:
+            continue
+
+        line = f"  {service_name.ljust(longest_service_name)}: "
+
+        if old_commit_id == "":
+            line += f"new app -> {termcolor.colored(new_commit_id, 'green')}"
+        else:
+            line += f"{old_commit_id} -> {termcolor.colored(new_commit_id, 'green')}"
+
+        message = get_commit_summary(new_commit_id)
+        if message:
+            if len(message) > 50:
+                line += f" ({message[:48]}...)"
+            else:
+                line += f" ({message})"
+
+        new_image_lines.append(line)
+
+    if new_image_lines:
+        print("images:")
+        print("\n".join(new_image_lines))
+    else:
+        print("images:       (no changes)")
+
     click.confirm(click.style("create deployment?", fg="green", bold=True), abort=True)
 
     user = user_details.current_user()
