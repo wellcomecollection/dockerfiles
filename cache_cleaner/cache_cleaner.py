@@ -26,7 +26,7 @@ import docopt
 from utils import parse_max_cache_size_arg, delete_dir_if_empty, delete_file
 
 daiquiri.setup(level=os.environ.get('LOG_LEVEL', 'INFO'))
-logger = daiquiri.getLogger(__name__)
+logger = daiquiri.getLogger("cache_cleaner")
 
 
 def main():
@@ -51,6 +51,7 @@ def main():
         )
 
         largest_access_age = 0
+        n_deletions = 0
         # Start looking from the deepest subdirectories first (topdown=False)
         # so that we can delete their parent directories as we go
         for _, dirs, files, root_fd in os.fwalk(cache_path, topdown=False):
@@ -63,6 +64,7 @@ def main():
                 # Delete any file that hasn't been accessed in > max_age
                 if age > max_age:
                     delete_file(filename, root_fd)
+                    n_deletions += 1
                     if not initial_pass:
                         total_size -= file_size
                     continue
@@ -80,6 +82,7 @@ def main():
             for dirname in dirs:
                 delete_dir_if_empty(dirname, root_fd)
 
+        logger.info("Deleted %d files.", n_deletions)
         initial_pass = False
         if total_size > max_cache_size:
             # Assuming that all files are the same size, how many would the
