@@ -17,35 +17,16 @@ Options:
                             printing which files would be deleted without actually deleting.
 
 """
-
 import os
-import re
 import time
 
 import daiquiri
 import docopt
 
-import simulfs
-
+from utils import parse_max_cache_size_arg, delete_dir_if_empty, delete_file
 
 daiquiri.setup(level=os.environ.get('LOG_LEVEL', 'INFO'))
 logger = daiquiri.getLogger(__name__)
-
-
-def parse_max_cache_size_arg(value):
-    m = re.match(r'([0-9]+)(K|M|G|T)', value)
-    if m is not None:
-        size = int(m.group(1))
-        suffix = m.group(2)
-        if suffix == 'K':
-            return size * 1024
-        elif suffix == 'M':
-            return size * 1024 * 1024
-        elif suffix == 'G':
-            return size * 1024 * 1024 * 1024
-        elif suffix == 'T':
-            return size * 1024 * 1024 * 1024 * 1024
-    return int(value)
 
 
 def main():
@@ -60,23 +41,64 @@ def main():
     if force:
         os.environ['X-RUN-CACHE-CLEANER'] = 'True'
 
-    logger.info('Walking filesystem for %r', cache_path)
-    fs = simulfs.SimulatedFS(cache_path)
+    total_size = 0
+    initial_pass = True
+    while initial_pass or total_size > max_cache_size:
+        logger.info(
+            'Walking filesystem for %r, deleting files that have not been accessed in more than %d seconds',
+            cache_path,
+            max_age
+        )
 
-    # Start by deleting files that are older than a certain age.
-    logger.info('Deleting files that are more than %d seconds old', max_age)
-    for f in fs.files:
-        if now - f.last_access_time > max_age:
-            f.delete()
+        largest_access_age = 0
+        # Start looking from the deepest subdirectories first (topdown=False)
+        # so that we can delete their parent directories as we go
+        for _, dirs, files, root_fd in os.fwalk(cache_path, topdown=False):
+            for filename in files:
+                stat = os.stat(filename, dir_fd=root_fd)
+                file_size = stat.st_size
+                last_access_time = stat.st_atime
+                age = now - last_access_time
 
-    # If the size of the system is still too large, continue deleting
-    # files until we're under the limit.
-    files_by_size = sorted(fs.files, key=lambda f: f.last_access_time)
-    logger.info(
-        'Deleting files to bring the cache under %d Kbytes', max_cache_size)
-    while fs.size > max_cache_size:
-        next_to_delete = files_by_size.pop(0)
-        next_to_delete.delete()
+                # Delete any file that hasn't been accessed in > max_age
+                if age > max_age:
+                    delete_file(filename, root_fd)
+                    if not initial_pass:
+                        total_size -= file_size
+                    continue
+
+                # Store the least recently accessed file
+                if age > largest_access_age:
+                    largest_access_age = age
+
+                if initial_pass:
+                    total_size += file_size
+                elif total_size <= max_cache_size:
+                    logger.info("Cache reduced to %d bytes, clearing complete", total_size)
+                    return
+
+            for dirname in dirs:
+                delete_dir_if_empty(dirname, root_fd)
+
+        initial_pass = False
+        if total_size > max_cache_size:
+            # Assuming that all files are the same size, how many would the
+            # excess size require us to delete?
+            estimated_fraction_files_to_keep = max_cache_size / total_size
+            # Assume that access patterns follow a Pareto distribution
+            # ie something like "80% of accesses are for 20% of documents"
+            # Where the parameter alpha is 1.8, from
+            # http://seelab.ucsd.edu/mobile/related_papers/Zipf-like.pdf
+            # We can get the percentile we want by using the Lorenz curve
+            # https://en.wikipedia.org/wiki/Pareto_distribution#Lorenz_curve_and_Gini_coefficient
+            estimated_age_cutoff_percentile = pow(1 - estimated_fraction_files_to_keep, 1 - (1/1.8))
+            # Next pass, start deleting files that are in this age percentile
+            max_age = largest_access_age * estimated_age_cutoff_percentile
+            logger.info(
+                'Cache size exceeds maximum size by %d bytes, decreasing max age to %d seconds',
+                total_size - max_cache_size,
+                max_age
+            )
 
     logger.info('Cache clearing complete')
 

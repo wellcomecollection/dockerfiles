@@ -7,7 +7,7 @@ COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY cache_cleaner.py /.
-COPY simulfs.py /.
+COPY utils.py /.
 COPY run.sh /.
 
 VOLUME /data
