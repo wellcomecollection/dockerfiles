@@ -67,6 +67,9 @@ def main():
                     n_deletions += 1
                     if not initial_pass:
                         total_size -= file_size
+                    if not initial_pass and total_size <= max_cache_size:
+                        logger.info("Cache reduced to %d bytes, clearing complete", total_size)
+                        return
                     continue
 
                 # Store the least recently accessed file
@@ -75,9 +78,6 @@ def main():
 
                 if initial_pass:
                     total_size += file_size
-                elif total_size <= max_cache_size:
-                    logger.info("Cache reduced to %d bytes, clearing complete", total_size)
-                    return
 
             for dirname in dirs:
                 delete_dir_if_empty(dirname, root_fd)
@@ -94,12 +94,13 @@ def main():
             # http://seelab.ucsd.edu/mobile/related_papers/Zipf-like.pdf
             # We can get the percentile we want by using the Lorenz curve
             # https://en.wikipedia.org/wiki/Pareto_distribution#Lorenz_curve_and_Gini_coefficient
-            estimated_age_cutoff_percentile = pow(1 - estimated_fraction_files_to_keep, 1 - (1/1.8))
+            estimated_age_cutoff_percentile = 1 - pow(1 - estimated_fraction_files_to_keep, 1 - (1/1.8))
             # Next pass, start deleting files that are in this age percentile
             max_age = largest_access_age * estimated_age_cutoff_percentile
             logger.info(
-                'Cache size exceeds maximum size by %d bytes, decreasing max age to %d seconds',
-                total_size - max_cache_size,
+                'Cache size (%d bytes) exceeds maximum size (%d bytes), decreasing max age to %d seconds',
+                total_size,
+                max_cache_size,
                 max_age
             )
 
