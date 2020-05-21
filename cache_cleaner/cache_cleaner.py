@@ -24,7 +24,13 @@ import daiquiri
 import docopt
 import humanize
 
-from utils import parse_max_cache_size_arg, delete_dir_if_empty, delete_file
+from utils import (
+    parse_max_cache_size_arg,
+    delete_dir_if_empty,
+    delete_file,
+    get_file_stats,
+    get_new_max_age,
+)
 
 daiquiri.setup(level=os.environ.get("LOG_LEVEL", "INFO"))
 logger = daiquiri.getLogger("cache_cleaner")
@@ -44,6 +50,7 @@ def main():
 
     total_size = 0
     initial_pass = True
+
     while initial_pass or total_size > max_cache_size:
         logger.info(
             "Walking filesystem for %r, deleting files that have not been accessed in more than %s",
@@ -57,70 +64,51 @@ def main():
         # so that we can delete their parent directories as we go
         for _, dirs, files, root_fd in os.fwalk(cache_path, topdown=False):
             for filename in files:
-                stat = os.stat(filename, dir_fd=root_fd)
-                file_size = stat.st_size
-                last_access_time = stat.st_atime
-                age = now - last_access_time
+                file_size, age = get_file_stats(filename, root_fd, now)
+                # Calculate the total size on the first path, only decrease
+                # it thereafter
+                if initial_pass:
+                    total_size += file_size
 
                 # Delete any file that hasn't been accessed in > max_age
                 if age > max_age:
                     delete_file(filename, root_fd)
                     n_deletions += 1
-                    if not initial_pass:
-                        total_size -= file_size
-                    if not initial_pass and total_size <= max_cache_size:
-                        logger.info(
-                            "Cache reduced to %s, clearing complete",
-                            humanize.naturalsize(total_size, gnu=True)
-                        )
-                        return
-                    continue
-
-                # Store the least recently accessed file
-                if age > largest_access_age:
+                    total_size -= file_size
+                elif age > largest_access_age:
+                    # Store the least recently accessed file
                     largest_access_age = age
 
-                if initial_pass:
-                    total_size += file_size
+                # Stop deleting files if we've deleted enough
+                if not initial_pass and total_size <= max_cache_size:
+                    logger.info(
+                        "Deleted %d files, cache reduced to %s, clearing complete",
+                        n_deletions,
+                        humanize.naturalsize(total_size, gnu=True),
+                    )
+                    return
 
             for dirname in dirs:
                 delete_dir_if_empty(dirname, root_fd)
 
         logger.info("Deleted %d files.", n_deletions)
         initial_pass = False
+
         if total_size > max_cache_size:
-            # Assuming that all files are the same size, how many would the
-            # excess size allow us to keep?
-            estimated_fraction_files_to_keep = max_cache_size / total_size
-            # Assume that access patterns follow a Pareto distribution
-            # ie something like "80% of accesses are for 20% of documents"
-            #
-            # We can approximate that the distribution of ages is similar
-            # to the distribution of document requests, where the latter
-            # is seen to be a Zipf distribution with a parameter of 0.8:
-            # http://seelab.ucsd.edu/mobile/related_papers/Zipf-like.pdf
-            #
-            # Following the relation between the Zipf and Pareto distributions,
-            # this makes our alpha for the Pareto distribution 1.8
-            # https://en.wikipedia.org/wiki/Pareto_distribution#Relation_to_Zipf's_law
-            #
-            # Thus, we can get the cutoff percentile of ages using the Lorenz
-            # curve for the Pareto distribution:
-            # https://en.wikipedia.org/wiki/Pareto_distribution#Lorenz_curve_and_Gini_coefficient
-            estimated_age_cutoff_percentile = 1 - pow(
-                1 - estimated_fraction_files_to_keep, 1 - (1 / 1.8)
+            max_age = get_new_max_age(
+                largest_age=largest_access_age,
+                max_size=max_cache_size,
+                current_size=total_size,
             )
-            # Next pass, start deleting files that are in this age percentile
-            max_age = largest_access_age * estimated_age_cutoff_percentile
             logger.info(
                 "Cache size (%s) exceeds maximum size (%s), decreasing max age",
                 humanize.naturalsize(total_size, gnu=True),
-                humanize.naturalsize(max_cache_size, gnu=True)
+                humanize.naturalsize(max_cache_size, gnu=True),
             )
 
     logger.info(
         "Cache clearing complete. Current cache size: %s",
-        humanize.naturalsize(total_size, gnu=True)
+        humanize.naturalsize(total_size, gnu=True),
     )
 
 
