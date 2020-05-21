@@ -22,6 +22,7 @@ import time
 
 import daiquiri
 import docopt
+import humanize
 
 from utils import parse_max_cache_size_arg, delete_dir_if_empty, delete_file
 
@@ -45,9 +46,9 @@ def main():
     initial_pass = True
     while initial_pass or total_size > max_cache_size:
         logger.info(
-            "Walking filesystem for %r, deleting files that have not been accessed in more than %d seconds",
+            "Walking filesystem for %r, deleting files that have not been accessed in more than %s",
             cache_path,
-            max_age,
+            humanize.naturaldelta(max_age),
         )
 
         largest_access_age = 0
@@ -69,7 +70,8 @@ def main():
                         total_size -= file_size
                     if not initial_pass and total_size <= max_cache_size:
                         logger.info(
-                            "Cache reduced to %d bytes, clearing complete", total_size
+                            "Cache reduced to %s, clearing complete",
+                            humanize.naturalsize(total_size, gnu=True)
                         )
                         return
                     continue
@@ -102,10 +104,9 @@ def main():
             # Next pass, start deleting files that are in this age percentile
             max_age = largest_access_age * estimated_age_cutoff_percentile
             logger.info(
-                "Cache size (%d bytes) exceeds maximum size (%d bytes), decreasing max age to %d seconds",
-                total_size,
-                max_cache_size,
-                max_age,
+                "Cache size (%s) exceeds maximum size (%s), decreasing max age",
+                humanize.naturalsize(total_size, gnu=True),
+                humanize.naturalsize(max_cache_size, gnu=True)
             )
 
     logger.info("Cache clearing complete")
