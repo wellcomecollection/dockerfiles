@@ -11,7 +11,7 @@ Options:
   -h --help                 Show this screen.
   --path=<PATH>             Path of the cache to clean.
   --max-age=<MAX_AGE>       Delete files that are older than MAX_AGE days.
-  --max-size=<MAX_SIZE>     Delete files until the cache size is less than MAX_SIZE Kbytes.
+  --max-size=<MAX_SIZE>     Delete files until the cache size is less than MAX_SIZE bytes.
                             Supports human-friendly options: 500M, 2G, 1T.
   --force                   Actually delete the files.  Otherwise runs in a "dry run" mode,
                             printing which files would be deleted without actually deleting.

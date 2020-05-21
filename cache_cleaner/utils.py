@@ -16,8 +16,6 @@ def parse_max_cache_size_arg(value):
             return size * 1024 * 1024 * 1024
         elif suffix == "T":
             return size * 1024 * 1024 * 1024 * 1024
-    else:
-        raise ValueError("Max size must be of the form (n)K/M/G/T!")
     return int(value)
 
 
