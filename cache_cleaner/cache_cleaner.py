@@ -90,13 +90,22 @@ def main():
         initial_pass = False
         if total_size > max_cache_size:
             # Assuming that all files are the same size, how many would the
-            # excess size require us to delete?
+            # excess size allow us to keep?
             estimated_fraction_files_to_keep = max_cache_size / total_size
             # Assume that access patterns follow a Pareto distribution
             # ie something like "80% of accesses are for 20% of documents"
-            # Where the parameter alpha is 1.8, from
+            #
+            # We can approximate that the distribution of ages is similar
+            # to the distribution of document requests, where the latter
+            # is seen to be a Zipf distribution with a parameter of 0.8:
             # http://seelab.ucsd.edu/mobile/related_papers/Zipf-like.pdf
-            # We can get the percentile we want by using the Lorenz curve
+            #
+            # Following the relation between the Zipf and Pareto distributions,
+            # this makes our alpha for the Pareto distribution 1.8
+            # https://en.wikipedia.org/wiki/Pareto_distribution#Relation_to_Zipf's_law
+            #
+            # Thus, we can get the cutoff percentile of ages using the Lorenz
+            # curve for the Pareto distribution:
             # https://en.wikipedia.org/wiki/Pareto_distribution#Lorenz_curve_and_Gini_coefficient
             estimated_age_cutoff_percentile = 1 - pow(
                 1 - estimated_fraction_files_to_keep, 1 - (1 / 1.8)
