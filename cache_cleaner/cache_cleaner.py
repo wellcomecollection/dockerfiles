@@ -109,7 +109,10 @@ def main():
                 humanize.naturalsize(max_cache_size, gnu=True)
             )
 
-    logger.info("Cache clearing complete")
+    logger.info(
+        "Cache clearing complete. Current cache size: %s",
+        humanize.naturalsize(total_size, gnu=True)
+    )
 
 
 if __name__ == "__main__":
