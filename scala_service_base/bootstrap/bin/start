@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -o errexit
+
+# Initialise
+PROJECT=${PROJECT:-""}
+
+# Start service (or stop if nothing to do)
+if [[ -z "${PROJECT}" ]]; then
+  echo "No PROJECT found, exiting."
+else
+  echo "PROJECT=$PROJECT"
+  /opt/docker/bin/"$PROJECT"
+  echo "/opt/docker/bin/$PROJECT stopped, exiting."
+fi
+
+exit 0
