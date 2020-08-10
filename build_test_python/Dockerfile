@@ -1,9 +1,9 @@
-FROM alpine
+FROM python:3-alpine
 
 LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description = "Build a Docker image for testing Python"
 
-RUN apk add --update docker python
+RUN apk add --update docker
 
 VOLUME /repo
 WORKDIR /repo
