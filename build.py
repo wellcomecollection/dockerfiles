@@ -79,6 +79,7 @@ if __name__ == '__main__':
         print_banner("Building", name)
 
         image_name = "wellcome/%s:%s" % (name, build_number)
+        latest_image_name = "wellcome/%s:%s" % (name, "latest")
 
         try:
             subprocess.check_call(["docker", "build", "--tag", image_name, docker_dir])
@@ -86,6 +87,7 @@ if __name__ == '__main__':
 
             if task == "publish" or do_local_publish:
                 subprocess.check_call(["docker", "push", image_name])
+                subprocess.check_call(["docker", "push", latest_image_name])
         except subprocess.CalledProcessError as err:
             print("ERROR: %r" % err)
             results[name] = False
