@@ -5,19 +5,9 @@ set -o errexit
 # Initialise
 PROJECT=${PROJECT:-""}
 
-# Expect stdout like: "$NAMESPACE,$SERVICE_ID,$TASK_ID,$IMAGE_ID"
-METADATA=$(/bootstrap/bin/get_metadata)
-
-# Extract fields
-export NAMESPACE=$(echo $METADATA | cut -d, -f1)
-export SERVICE_ID=$(echo $METADATA | cut -d, -f2)
-export TASK_ID=$(echo $METADATA | cut -d, -f3)
-export IMAGE_ID=$(echo $METADATA | cut -d, -f4)
-
 # Start service (or stop if nothing to do)
 if [[ -z "${PROJECT}" ]]; then
-  echo "No PROJECT found, running echo_metadata."
-  /bootstrap/bin/echo_metadata
+  echo "No PROJECT found."
   echo "Nothing to do, exiting."
 else
   echo "PROJECT=$PROJECT"
