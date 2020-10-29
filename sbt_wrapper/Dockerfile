@@ -3,7 +3,7 @@ FROM wellcome/java11:121
 LABEL maintainer = "Wellcome Collection <dev@wellcomecollection.org>"
 LABEL description "A Docker image for running SBT"
 
-ENV SBT_VERSION 1.2.8
+ENV SBT_VERSION 1.4.1
 ENV SBT_HOME /usr/local/sbt
 ENV PATH ${PATH}:${SBT_HOME}/bin
 
