@@ -2,11 +2,11 @@
 
 A repository for dockerfiles created at the Wellcome Trust
 
-## Automated builds
+## Builds
 
-The container images here are built at https://hub.docker.com/u/wellcome
+The container images here are at https://hub.docker.com/u/wellcome
 
-[![Build Status](https://travis-ci.org/wellcomecollection/dockerfiles.svg?branch=master)](https://travis-ci.org/wellcomecollection/dockerfiles)
+**You will need to manually push images.**
 
 ## Why bother?
 
