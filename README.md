@@ -4,7 +4,7 @@ A repository for dockerfiles created at the Wellcome Trust
 
 ## Builds
 
-The container images here are at https://hub.docker.com/u/wellcome
+The container images are at https://hub.docker.com/u/wellcome
 
 **You will need to manually push images.**
 
