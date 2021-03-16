@@ -46,4 +46,4 @@ RUN /usr/local/sbt/bin/sbt sbtVersion
 # -J-XX:MaxMetaspaceSize: Sets the amount of memory used to store compilation metadata (by default unbounded)
 # Our use of scala & libraries that use macros means this value can cause OOM errors if a maximum is unset
 
-ENTRYPOINT ["/usr/local/sbt/bin/sbt", "-J-Xss6M", "-J-Xms4G", "-J-Xmx4G", "-J-XX:MaxMetaspaceSize=2G"]
+ENTRYPOINT ["/usr/local/sbt/bin/sbt", "-batch", "-J-Xss6M", "-J-Xms4G", "-J-Xmx4G", "-J-XX:MaxMetaspaceSize=2G"]
