@@ -7,7 +7,7 @@ cd $SOURCE_DIRECTORY
 
 if [[ $FORMAT_LANGUAGES =~ "terraform" ]]; then
   echo "Running terraform fmt..."
-  terraform fmt .
+  terraform fmt -recursive .
 fi
 
 if [[ $FORMAT_LANGUAGES =~ "scalafmt" ]]; then
